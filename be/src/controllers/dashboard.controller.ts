@@ -20,7 +20,7 @@ export const getDashboardData = async (req: Request, res: Response) => {
 
     const totalRevenue = allCheckouts.reduce(
       (sum, o) => sum + (o.finalPrice ?? o.totalPrice ?? 0),
-      0
+      0,
     );
 
     const currentYear = new Date().getFullYear();
