@@ -1,0 +1,1595 @@
+{
+  "info": {
+    "_postman_id": "e-commerce-web-api-collection-v1",
+    "name": "E-Commerce Web API",
+    "description": "Postman Collection cho dự án E-Commerce Web, tuân theo chuẩn cấu trúc của Presentation.postman_collection.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "auth",
+          "item": [
+            {
+              "name": "register",
+              "item": [
+                {
+                  "name": "/api/auth/register",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Nguyen Van A\",\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/register",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "register"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"name\": \"Nguyen Van A\",\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}"
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/auth/register",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "auth", "register"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "login",
+              "item": [
+                {
+                  "name": "/api/auth/login",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"Status code is 200\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "const resData = pm.response.json();",
+                          "if (resData.data && resData.data.token) {",
+                          "    pm.environment.set(\"bearerToken\", resData.data.token);",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ],
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/login",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "login"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"123456\"\n}"
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/auth/login",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "auth", "login"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"email\": \"user@example.com\",\n      \"name\": \"Nguyen Van A\",\n      \"role\": \"user\"\n    },\n    \"token\": \"jwt_token_string\"\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "logout",
+              "item": [
+                {
+                  "name": "/api/auth/logout",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/auth/logout",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "auth", "logout"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/auth/logout",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "auth", "logout"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true\n}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "users",
+          "item": [
+            {
+              "name": "profile",
+              "item": [
+                {
+                  "name": "/api/profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/profile",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "profile"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Authorization",
+                            "value": "Bearer {{bearerToken}}"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/profile",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "profile"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"email\": \"user@example.com\",\n    \"name\": \"Nguyen Van A\",\n    \"role\": \"user\",\n    \"created_at\": \"2026-08-04T10:00:00.000Z\"\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "products",
+          "item": [
+            {
+              "name": "{id}",
+              "item": [
+                {
+                  "name": "/api/products/:id",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products/:id",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products", ":id"],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/products/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "products", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"iPhone 15 Pro\",\n    \"price\": 25000000,\n    \"category\": \"dien-thoai\",\n    \"description\": \"Apple iPhone 15 Pro\",\n    \"imageUrl\": \"https://example.com/image.jpg\"\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "/api/products",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/products?page=1&limit=10",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "products"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{baseUrl}}/api/products?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "products"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"products\": [\n    {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"iPhone 15 Pro\",\n      \"price\": 25000000,\n      \"category\": \"dien-thoai\",\n      \"description\": \"Apple iPhone 15 Pro\"\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"limit\": 10,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "cart",
+          "item": [
+            {
+              "name": "add",
+              "item": [
+                {
+                  "name": "/api/cart/add",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"productId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n  \"quantity\": 2\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/cart/add",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "cart", "add"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/cart/add",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "cart", "add"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"message\": \"Product added to cart\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "update",
+              "item": [
+                {
+                  "name": "/api/cart/update",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"productId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n  \"quantity\": 3\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/cart/update",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "cart", "update"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "PUT",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/cart/update",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "cart", "update"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"userId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n  \"products\": [\n    {\n      \"productId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"iPhone 15 Pro\",\n      \"price\": 25000000,\n      \"quantity\": 3\n    }\n  ],\n  \"totalPrice\": 75000000\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "delete",
+              "item": [
+                {
+                  "name": "/api/cart/delete",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"productId\": \"65f1a2b3c4d5e6f7a8b9c0d1\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/cart/delete",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "cart", "delete"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "DELETE",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/cart/delete",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "cart", "delete"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"userId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n  \"products\": [],\n  \"totalPrice\": 0\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "/api/cart",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/cart",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "cart"]
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{baseUrl}}/api/cart",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "cart"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"userId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"products\": [\n      {\n        \"productId\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n        \"name\": \"iPhone 15 Pro\",\n        \"imageUrl\": \"https://example.com/image.jpg\",\n        \"price\": 25000000,\n        \"quantity\": 1\n      }\n    ],\n    \"totalPrice\": 25000000\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "checkout",
+          "item": [
+            {
+              "name": "create",
+              "item": [
+                {
+                  "name": "/api/checkout/create",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"typePayment\": \"cod\",\n  \"shippingInfo\": {\n    \"fullName\": \"Nguyen Van A\",\n    \"phoneNumber\": \"0987654321\",\n    \"address\": \"123 Le Loi, Quan 1, TP.HCM\",\n    \"email\": \"user@example.com\"\n  }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/checkout/create",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "checkout", "create"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/checkout/create",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "checkout", "create"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"message\": \"Đơn COD đã tạo thành công\",\n  \"orderId\": \"PAY172280000000000\",\n  \"metadata\": {}\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "vnpay-callback",
+              "item": [
+                {
+                  "name": "/api/checkout/vnpay-callback",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId=PAY172280000000000",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "checkout", "vnpay-callback"],
+                      "query": [
+                        {
+                          "key": "vnp_ResponseCode",
+                          "value": "00"
+                        },
+                        {
+                          "key": "vnp_OrderInfo",
+                          "value": "orderId=PAY172280000000000"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "302 Redirect",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId=PAY172280000000000",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "checkout", "vnpay-callback"]
+                        }
+                      },
+                      "status": "Found",
+                      "code": 302,
+                      "_postman_previewlanguage": "text",
+                      "body": ""
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "orders",
+          "item": [
+            {
+              "name": "{id}",
+              "item": [
+                {
+                  "name": "/api/orders/:id",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/orders/:id",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "orders", ":id"],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "PAY172280000000000"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/orders/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "orders", ":id"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"order\": {\n    \"id\": \"PAY172280000000000\",\n    \"status\": \"pending\",\n    \"amount\": 25000000,\n    \"createdAt\": \"2026-08-04T10:00:00.000Z\",\n    \"method\": \"cod\",\n    \"products\": []\n  }\n}"
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/orders/:id",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/orders/:id",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "orders", ":id"],
+                      "variable": [
+                        {
+                          "key": "id",
+                          "value": "PAY172280000000000"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "DELETE",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/orders/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "orders", ":id"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"message\": \"Order deleted successfully\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "/api/orders",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders?page=1&limit=10&status=success",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "orders"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "10"
+                    },
+                    {
+                      "key": "status",
+                      "value": "success"
+                    }
+                  ]
+                }
+              },
+              "response": [
+                {
+                  "name": "200 OK",
+                  "originalRequest": {
+                    "method": "GET",
+                    "url": {
+                      "raw": "{{baseUrl}}/api/orders?page=1&limit=10&status=success",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "orders"]
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "_postman_previewlanguage": "json",
+                  "body": "{\n  \"orders\": [\n    {\n      \"id\": \"PAY172280000000000\",\n      \"status\": \"success\",\n      \"amount\": 25000000,\n      \"createdAt\": \"2026-08-04T10:00:00.000Z\",\n      \"method\": \"vnpay\"\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "admin",
+          "item": [
+            {
+              "name": "dashboard",
+              "item": [
+                {
+                  "name": "/api/admin/dashboard",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/dashboard",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "dashboard"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/dashboard",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "dashboard"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"message\": \"Dashboard data fetched successfully\",\n  \"data\": {\n    \"totalProducts\": 10,\n    \"totalUsers\": 5,\n    \"totalOrders\": 12,\n    \"totalRevenue\": 300000000,\n    \"monthlyRevenue\": []\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "categories",
+              "item": [
+                {
+                  "name": "{id}",
+                  "item": [
+                    {
+                      "name": "/api/admin/categories/:id",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"category_name\": \"Điện thoại cao cấp\",\n  \"category_id\": \"dien-thoai-cao-cap\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/categories/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "categories", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "PUT",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/categories/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "categories", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true\n}"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "/api/admin/categories/:id",
+                      "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/categories/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "categories", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "DELETE",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/categories/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "categories", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/categories",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/categories?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "categories"],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/categories?page=1&limit=10",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "categories"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"categories\": [\n    {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"category_name\": \"Điện thoại\",\n      \"category_id\": \"dien-thoai\"\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"limit\": 10,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/categories",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"category_name\": \"Điện thoại\",\n  \"category_id\": \"dien-thoai\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/categories",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "categories"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/categories",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "categories"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"category_name\": \"Điện thoại\",\n    \"category_id\": \"dien-thoai\"\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "products",
+              "item": [
+                {
+                  "name": "{id}",
+                  "item": [
+                    {
+                      "name": "/api/admin/products/:id",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"name\": \"iPhone 15 Pro Max\",\n  \"price\": 30000000,\n  \"description\": \"Apple iPhone 15 Pro Max 256GB\",\n  \"category\": \"dien-thoai\",\n  \"imageUrl\": \"https://example.com/image.jpg\",\n  \"public_id\": \"my_app_images/sample\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/products/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "products", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "PUT",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/products/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "products", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true\n}"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "/api/admin/products/:id",
+                      "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/products/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "products", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "DELETE",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/products/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "products", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/products",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products"],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/products?page=1&limit=10",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "products"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"products\": [\n    {\n      \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"name\": \"iPhone 15 Pro\",\n      \"price\": 25000000,\n      \"category\": \"dien-thoai\",\n      \"description\": \"Apple iPhone 15 Pro\"\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"limit\": 10,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/products",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"price\": 25000000,\n  \"description\": \"Apple iPhone 15 Pro 128GB\",\n  \"category\": \"dien-thoai\",\n  \"imageUrl\": \"https://example.com/image.jpg\",\n  \"public_id\": \"my_app_images/sample\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/products",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "products"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "POST",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/products",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "products"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"product\": {\n    \"id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"name\": \"iPhone 15 Pro\",\n    \"price\": 25000000,\n    \"category\": \"dien-thoai\",\n    \"description\": \"Apple iPhone 15 Pro 128GB\",\n    \"imageUrl\": \"https://example.com/image.jpg\",\n    \"public_id\": \"my_app_images/sample\"\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "users",
+              "item": [
+                {
+                  "name": "{id}",
+                  "item": [
+                    {
+                      "name": "block",
+                      "item": [
+                        {
+                          "name": "/api/admin/users/:id/block",
+                          "request": {
+                            "method": "PUT",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"block\": true\n}",
+                              "options": {
+                                "raw": {
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/users/:id/block",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "users", ":id", "block"],
+                              "variable": [
+                                {
+                                  "key": "id",
+                                  "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                                }
+                              ]
+                            }
+                          },
+                          "response": [
+                            {
+                              "name": "200 OK",
+                              "originalRequest": {
+                                "method": "PUT",
+                                "url": {
+                                  "raw": "{{baseUrl}}/api/admin/users/:id/block",
+                                  "host": ["{{baseUrl}}"],
+                                  "path": ["api", "admin", "users", ":id", "block"]
+                                }
+                              },
+                              "status": "OK",
+                              "code": 200,
+                              "_postman_previewlanguage": "json",
+                              "body": "{\n  \"success\": true,\n  \"message\": \"User has been blocked\"\n}"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "/api/admin/users/:id",
+                      "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/users/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "users", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "65f1a2b3c4d5e6f7a8b9c0d1"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "DELETE",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/users/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "users", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true,\n  \"message\": \"User deleted successfully\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/users",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/users?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "users"],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/users?page=1&limit=10",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "users"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"users\": [\n    {\n      \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n      \"email\": \"user@example.com\",\n      \"name\": \"Nguyen Van A\",\n      \"role\": \"user\",\n      \"isBlocked\": false\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"limit\": 10,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "orders",
+              "item": [
+                {
+                  "name": "{id}",
+                  "item": [
+                    {
+                      "name": "/api/admin/orders/:id",
+                      "request": {
+                        "method": "PUT",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"status\": \"success\"\n}",
+                          "options": {
+                            "raw": {
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/orders/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "orders", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "PAY172280000000000"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "PUT",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/orders/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "orders", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true,\n  \"message\": \"Order status updated successfully\"\n}"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "/api/admin/orders/:id",
+                      "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/orders/:id",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "orders", ":id"],
+                          "variable": [
+                            {
+                              "key": "id",
+                              "value": "PAY172280000000000"
+                            }
+                          ]
+                        }
+                      },
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "DELETE",
+                            "url": {
+                              "raw": "{{baseUrl}}/api/admin/orders/:id",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "admin", "orders", ":id"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true,\n  \"message\": \"Order deleted successfully\"\n}"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "/api/admin/orders",
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/admin/orders?page=1&limit=10",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "admin", "orders"],
+                      "query": [
+                        {
+                          "key": "page",
+                          "value": "1"
+                        },
+                        {
+                          "key": "limit",
+                          "value": "10"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/admin/orders?page=1&limit=10",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "admin", "orders"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"orders\": [\n    {\n      \"id\": \"PAY172280000000000\",\n      \"user\": {\n        \"fullName\": \"Nguyen Van A\",\n        \"email\": \"user@example.com\"\n      },\n      \"status\": \"pending\",\n      \"amount\": 25000000,\n      \"createdAt\": \"2026-08-04T10:00:00.000Z\",\n      \"method\": \"cod\"\n    }\n  ],\n  \"pagination\": {\n    \"currentPage\": 1,\n    \"totalPages\": 1,\n    \"total\": 1,\n    \"limit\": 10,\n    \"hasNext\": false,\n    \"hasPrev\": false\n  }\n}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "images",
+          "item": [
+            {
+              "name": "upload",
+              "item": [
+                {
+                  "name": "/api/images/upload",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "formdata",
+                      "formdata": [
+                        {
+                          "key": "image",
+                          "type": "file",
+                          "src": []
+                        }
+                      ]
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/images/upload",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "images", "upload"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "201 Created",
+                      "originalRequest": {
+                        "method": "POST",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/images/upload",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "images", "upload"]
+                        }
+                      },
+                      "status": "Created",
+                      "code": 201,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"id\": \"my_app_images/sample_id\",\n  \"url\": \"https://res.cloudinary.com/demo/image/upload/v1234567/my_app_images/sample.webp\"\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "get",
+              "item": [
+                {
+                  "name": "/api/images/get",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/images/get?limit=20",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "images", "get"],
+                      "query": [
+                        {
+                          "key": "limit",
+                          "value": "20"
+                        }
+                      ]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "GET",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/images/get?limit=20",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "images", "get"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"images\": [\n    {\n      \"id\": \"my_app_images/sample_id\",\n      \"url\": \"https://res.cloudinary.com/demo/image/upload/v1234567/my_app_images/sample.webp\",\n      \"size\": 102400,\n      \"uploadedAt\": \"2026-08-04T10:00:00.000Z\"\n    }\n  ]\n}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "delete",
+              "item": [
+                {
+                  "name": "/api/images/delete",
+                  "request": {
+                    "method": "DELETE",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"public_id\": \"my_app_images/sample_id\"\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/images/delete",
+                      "host": ["{{baseUrl}}"],
+                      "path": ["api", "images", "delete"]
+                    }
+                  },
+                  "response": [
+                    {
+                      "name": "200 OK",
+                      "originalRequest": {
+                        "method": "DELETE",
+                        "url": {
+                          "raw": "{{baseUrl}}/api/images/delete",
+                          "host": ["{{baseUrl}}"],
+                          "path": ["api", "images", "delete"]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "body": "{\n  \"success\": true,\n  \"message\": \"Image deleted successfully\"\n}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    }
+  ]
+}
