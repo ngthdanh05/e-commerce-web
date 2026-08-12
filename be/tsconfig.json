@@ -1,12 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "CommonJS",
     "typeRoots": ["./node_modules/@types", "./src/types"],
     "types": ["node", "jest"],
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipDefaultLibCheck": true,
     "outDir": "./dist",
     "baseUrl": "./src",
     "paths": {
