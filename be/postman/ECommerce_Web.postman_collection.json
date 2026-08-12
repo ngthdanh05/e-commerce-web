@@ -146,35 +146,50 @@
               ]
             },
             {
-              "name": "logout",
+              "name": "users",
               "item": [
                 {
-                  "name": "/api/auth/logout",
-                  "request": {
-                    "method": "POST",
-                    "header": [],
-                    "url": {
-                      "raw": "{{baseUrl}}/api/auth/logout",
-                      "host": ["{{baseUrl}}"],
-                      "path": ["api", "auth", "logout"]
-                    }
-                  },
-                  "response": [
+                  "name": "profile",
+                  "item": [
                     {
-                      "name": "200 OK",
-                      "originalRequest": {
-                        "method": "POST",
-                        "header": [],
+                      "name": "/api/profile",
+                      "request": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
                         "url": {
-                          "raw": "{{baseUrl}}/api/auth/logout",
+                          "raw": "{{baseUrl}}/api/profile",
                           "host": ["{{baseUrl}}"],
-                          "path": ["api", "auth", "logout"]
+                          "path": ["api", "profile"]
                         }
                       },
-                      "status": "OK",
-                      "code": 200,
-                      "_postman_previewlanguage": "json",
-                      "body": "{\n  \"success\": true\n}"
+                      "response": [
+                        {
+                          "name": "200 OK",
+                          "originalRequest": {
+                            "method": "GET",
+                            "header": [
+                              {
+                                "key": "Authorization",
+                                "value": "Bearer {{bearerToken}}"
+                              }
+                            ],
+                            "url": {
+                              "raw": "{{baseUrl}}/api/profile",
+                              "host": ["{{baseUrl}}"],
+                              "path": ["api", "profile"]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "body": "{\n  \"success\": true,\n  \"data\": {\n    \"_id\": \"65f1a2b3c4d5e6f7a8b9c0d1\",\n    \"email\": \"user@example.com\",\n    \"name\": \"Nguyen Van A\",\n    \"role\": \"user\",\n    \"created_at\": \"2026-08-04T10:00:00.000Z\"\n  }\n}"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -1197,7 +1212,13 @@
                                 "url": {
                                   "raw": "{{baseUrl}}/api/admin/users/:id/block",
                                   "host": ["{{baseUrl}}"],
-                                  "path": ["api", "admin", "users", ":id", "block"]
+                                  "path": [
+                                    "api",
+                                    "admin",
+                                    "users",
+                                    ":id",
+                                    "block"
+                                  ]
                                 }
                               },
                               "status": "OK",
