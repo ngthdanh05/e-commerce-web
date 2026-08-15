@@ -151,7 +151,7 @@ export const updateProduct = async (req: Request, res: Response) => {
           public_id,
           updated_at: new Date(),
         },
-      }
+      },
     );
 
     if (result.modifiedCount === 0) {
