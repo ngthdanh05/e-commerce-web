@@ -4,6 +4,50 @@ import { cartCollection } from "models/cart.model";
 import { productCollection } from "models/product.model";
 import { AuthRequest } from "middleware/auth";
 
+const recalculateCartTotal = async (cart: any) => {
+  const productCol = await productCollection.getCollection();
+
+  const productIds = cart.products.map(
+    (p: any) => new ObjectId(p.productId)
+  );
+
+  const products = await productCol
+    .find({ _id: { $in: productIds } })
+    .toArray();
+
+  const productMap = new Map(
+    products.map((product: any) => [
+      product._id.toString(),
+      product,
+    ])
+  );
+
+  let totalPrice = 0;
+
+  cart.products = cart.products.map((cartProduct: any) => {
+    const product = productMap.get(cartProduct.productId);
+
+    if (!product) {
+      throw new Error(`Product not found: ${cartProduct.productId}`);
+    }
+
+    const price = product.price;
+
+    totalPrice += price * cartProduct.quantity;
+
+    return {
+      ...cartProduct,
+      name: product.name,
+      imageUrl: product.imageUrl,
+      price,
+    };
+  });
+
+  cart.totalPrice = totalPrice;
+
+  return cart;
+};
+
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?._id;
@@ -80,10 +124,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         });
       }
 
-      cart.totalPrice = cart.products.reduce(
-        (sum: number, p: any) => sum + p.price * p.quantity,
-        0
-      );
+      await recalculateCartTotal(cart);
       cart.updated_at = new Date();
 
       await cartCol.updateOne({ userId }, { $set: cart });
@@ -115,16 +156,13 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     if (index < 0)
       return res.status(404).json({ message: "Product not found in cart" });
 
-    if (quantity <= 0) {
+    if (quantity === 0) {
       cart.products.splice(index, 1);
     } else {
       cart.products[index].quantity = quantity;
     }
 
-    cart.totalPrice = cart.products.reduce(
-      (sum: number, p: any) => sum + p.price * p.quantity,
-      0
-    );
+    await recalculateCartTotal(cart);
     cart.updated_at = new Date();
 
     await cartCol.updateOne({ userId }, { $set: cart });

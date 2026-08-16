@@ -10,8 +10,8 @@ export const addToCartSchema = z.object({
   productId: objectIdSchema,
   quantity: z
     .number("Quantity is required")
-    .int("Invalid input: expected int, received number")
-    .min(1, "Quantity must be at least 1")
+    .int("Quantity must be an integer")
+    .min(1, "Quantity must be greater than zero")
     .max(99, "Quantity must not exceed 99"),
 });
 
@@ -21,7 +21,7 @@ export const updateCartSchema = z.object({
   quantity: z
     .number("Quantity is required")
     .int("Quantity must be an integer")
-    .min(1, "Quantity must be at least 1")
+    .min(0, "Quantity cannot be negative")
     .max(99, "Quantity must not exceed 99"),
 });
 
