@@ -4,6 +4,54 @@ import { cartCollection } from "models/cart.model";
 import { productCollection } from "models/product.model";
 import { AuthRequest } from "middleware/auth";
 
+const toMongoId = (id: string): ObjectId | string => {
+  return ObjectId.isValid(id) ? new ObjectId(id) : id;
+};
+
+const recalculateCartTotal = async (cart: any) => {
+  const productCol = await productCollection.getCollection();
+
+  const productIds = cart.products.map(
+    (p: any) => toMongoId(p.productId)
+  );
+
+  const products = await productCol
+    .find({ _id: { $in: productIds } })
+    .toArray();
+
+  const productMap = new Map(
+    products.map((product: any) => [
+      product._id.toString(),
+      product,
+    ])
+  );
+
+  let totalPrice = 0;
+
+  cart.products = cart.products.map((cartProduct: any) => {
+    const product = productMap.get(cartProduct.productId);
+
+    if (!product) {
+      throw new Error(`Product not found: ${cartProduct.productId}`);
+    }
+
+    const price = product.price;
+
+    totalPrice += price * cartProduct.quantity;
+
+    return {
+      ...cartProduct,
+      name: product.name,
+      imageUrl: product.imageUrl,
+      price,
+    };
+  });
+
+  cart.totalPrice = totalPrice;
+
+  return cart;
+};
+
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?._id;
@@ -35,7 +83,10 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "Missing productId or quantity" });
     }
     const productCol = await productCollection.getCollection();
-    const product = await productCol.findOne({ _id: new ObjectId(productId) });
+    
+    const product = await (productCol as any).findOne({
+      _id: toMongoId(productId),
+    });
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
@@ -80,10 +131,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         });
       }
 
-      cart.totalPrice = cart.products.reduce(
-        (sum: number, p: any) => sum + p.price * p.quantity,
-        0
-      );
+      await recalculateCartTotal(cart);
       cart.updated_at = new Date();
 
       await cartCol.updateOne({ userId }, { $set: cart });
@@ -115,16 +163,13 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     if (index < 0)
       return res.status(404).json({ message: "Product not found in cart" });
 
-    if (quantity <= 0) {
+    if (quantity === 0) {
       cart.products.splice(index, 1);
     } else {
       cart.products[index].quantity = quantity;
     }
 
-    cart.totalPrice = cart.products.reduce(
-      (sum: number, p: any) => sum + p.price * p.quantity,
-      0
-    );
+    await recalculateCartTotal(cart);
     cart.updated_at = new Date();
 
     await cartCol.updateOne({ userId }, { $set: cart });
