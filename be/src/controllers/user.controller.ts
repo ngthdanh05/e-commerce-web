@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { userCollection } from "models/user.model";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { AuthRequest } from "middleware/auth";
 import { ObjectId } from "mongodb";
@@ -20,10 +20,8 @@ export const registerUser = async (req: Request, res: Response) => {
 
     if (exists) return res.status(400).json("ACCOUNT_ALREADY_EXISTS");
 
-    const hmac = crypto.createHmac("sha256", process.env.CRYPT_SECRET!);
+    const password_hash = await bcrypt.hash(password, 10);
 
-    hmac.update(password);
-    const password_hash = hmac.digest("hex");
     await col.insertOne({
       email,
       name,
@@ -56,20 +54,18 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "This account has been blocked" });
     }
 
-    const hmac = crypto.createHmac("sha256", process.env.CRYPT_SECRET!);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
-    hmac.update(password);
-
-    const c_password_hash = hmac.digest("hex");
-    if (user.password_hash !== c_password_hash)
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "WRONG_PASSWORD" });
+    }
 
     const token = jwt.sign(
       { _id: user._id.toString(), email, role: user.role },
       process.env.JWT_SECRET!,
       {
         expiresIn: "7d",
-      }
+      },
     );
 
     res.cookie("session_token", token, {
@@ -102,7 +98,7 @@ export const profile = async (req: AuthRequest, res: Response) => {
     const col = await userCollection.getCollection();
     const user = await col.findOne(
       { email: req.user?.email },
-      { projection: { password_hash: 0 } }
+      { projection: { password_hash: 0 } },
     );
     if (!user)
       return res
@@ -172,7 +168,7 @@ export const toggleBlockUser = async (req: Request, res: Response) => {
         $set: {
           isBlocked: Boolean(block),
         },
-      }
+      },
     );
 
     return res.json({
