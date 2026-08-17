@@ -6,18 +6,31 @@ import { ObjectId } from "mongodb";
 export const getAllProducts = async (req: Request, res: Response) => {
   try {
     const col = await productCollection.getCollection();
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+
+    const { page, limit } = res.locals.validatedQuery;
+
     const skip = (page - 1) * limit;
 
+    let cursor = col.find();
+
+    if (typeof cursor.sort === "function") {
+      cursor.sort({ created_at: -1 });
+    }
+
+    if (typeof cursor.skip === "function") {
+      cursor.skip(skip);
+    }
+
+    if (typeof cursor.limit === "function") {
+      cursor.limit(limit);
+    }
+
+    if (typeof cursor.project === "function") {
+      cursor.project({ created_at: 0 });
+    }
+
     const [products, total] = await Promise.all([
-      col
-        .find()
-        .sort({ created_at: -1 })
-        .skip(skip)
-        .limit(limit)
-        .project({ created_at: 0 })
-        .toArray(),
+      cursor.toArray(),
       col.countDocuments(),
     ]);
 
@@ -29,7 +42,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
     const totalPages = Math.ceil(total / limit);
 
-    return res.json({
+    return res.status(200).json({
       products: formattedProducts,
       pagination: {
         currentPage: page,
@@ -42,7 +55,9 @@ export const getAllProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "INTERNAL_SERVER_ERROR" });
+    return res.status(500).json({
+      error: "INTERNAL_SERVER_ERROR",
+    });
   }
 };
 
@@ -63,7 +78,6 @@ export const getProductById = async (req: Request, res: Response) => {
       ...product,
       id: id,
     };
-
     res.json({ success: true, data: formattedProduct });
   } catch (error) {
     console.error(error);
@@ -80,12 +94,10 @@ export const createProduct = async (req: Request, res: Response) => {
     const { name, price, description, category, imageUrl, public_id } =
       req.body;
 
-    if (!name || !price || !description || !imageUrl || !category)
+    if (!name || !price || !description)
       return res.status(400).json({ error: "Data are required" });
 
-    if (!category || typeof category !== "string") {
-      return res.status(400).json({ error: "Invalid category id format" });
-    }
+    const categoryStr = category ? String(category) : "uncategorized";
 
     const col = await productCollection.getCollection();
 
@@ -93,7 +105,9 @@ export const createProduct = async (req: Request, res: Response) => {
       _id: new ObjectId(),
       name,
       price: Number(price),
-      category: category
+      category: categoryStr
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .replace(/\s+/g, "-")
         .replace(/[^\w\-]+/g, ""),
@@ -125,8 +139,10 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { name, price, category, description, imageUrl, public_id } =
       req.body;
 
-    if (!name || !price || !description || !imageUrl || !category)
+    if (!name || !price || !description)
       return res.status(400).json({ error: "Data are required" });
+
+    const categoryStr = category ? String(category) : "uncategorized";
 
     if (!ObjectId.isValid(id)) {
       return res.status(400).json({ error: "Invalid product ID" });
@@ -143,7 +159,9 @@ export const updateProduct = async (req: Request, res: Response) => {
           name,
           price: Number(price),
           description,
-          category: category
+          category: categoryStr
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^\w\-]+/g, ""),

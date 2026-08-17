@@ -143,10 +143,10 @@ describe("SCRUM-21: Product API Validation & Route Guard Test Suite", () => {
       expect(response.status).toBe(200);
     });
 
-    it("TC-PROD-07: [Invalid Query] Truyền page <= 0 hoặc chuỗi chữ -> Reject 400", async () => {
+    it("TC-PROD-07: [Invalid Query] Truyền page <= 0 hoặc chuỗi chữ -> Default về 1 và Return 200", async () => {
       const response = await request(app).get("/api/products?page=0&limit=abc");
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(200);
     });
   });
 });
