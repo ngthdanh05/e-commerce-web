@@ -4,11 +4,15 @@ import { cartCollection } from "models/cart.model";
 import { productCollection } from "models/product.model";
 import { AuthRequest } from "middleware/auth";
 
+const toMongoId = (id: string): ObjectId | string => {
+  return ObjectId.isValid(id) ? new ObjectId(id) : id;
+};
+
 const recalculateCartTotal = async (cart: any) => {
   const productCol = await productCollection.getCollection();
 
   const productIds = cart.products.map(
-    (p: any) => new ObjectId(p.productId)
+    (p: any) => toMongoId(p.productId)
   );
 
   const products = await productCol
@@ -79,7 +83,10 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "Missing productId or quantity" });
     }
     const productCol = await productCollection.getCollection();
-    const product = await productCol.findOne({ _id: new ObjectId(productId) });
+    
+    const product = await (productCol as any).findOne({
+      _id: toMongoId(productId),
+    });
 
     if (!product) {
       return res.status(404).json({ error: "Product not found" });
