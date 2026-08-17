@@ -136,7 +136,7 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
     });
 
     it("TC-AUTH-06: [BVA Max+ Invalid] Email = 255 ký tự -> Reject 400", async () => {
-      const longLocal = "a".repeat(243);
+      const longLocal = "a".repeat(244);
       const email255 = `${longLocal}@domain.com`;
 
       const response = await request(app).post("/api/auth/register").send({
