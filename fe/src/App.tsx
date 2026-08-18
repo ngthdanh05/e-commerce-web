@@ -18,7 +18,6 @@ import TransactionHistory from "./pages/member/TransactionHistory";
 import OrderDetail from "./pages/member/OrderDetail";
 import LoginPage from "./pages/auth/Login";
 import RegisterPage from "./pages/auth/Register";
-import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/layout/AdminLayout";
 import ProductReview from "./pages/member/ProductReview";
 import WriteReview from "./pages/member/WriteReview";
@@ -45,14 +44,14 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin/login" element={<LoginForAdmin />} />
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<DashBoard />} />
-            <Route path="categories" element={<CategoryManagement />} />
-            <Route path="products" element={<ProductManagement />} />
-            <Route path="users" element={<UsersManagement />} />
-            <Route path="orders" element={<OrdersManagement />} />
-          </Route>
+
+        {/* Bỏ ProtectedRoute để vào thẳng giao diện Admin test Jira */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<DashBoard />} />
+          <Route path="categories" element={<CategoryManagement />} />
+          <Route path="products" element={<ProductManagement />} />
+          <Route path="users" element={<UsersManagement />} />
+          <Route path="orders" element={<OrdersManagement />} />
         </Route>
       </Routes>
     </Router>

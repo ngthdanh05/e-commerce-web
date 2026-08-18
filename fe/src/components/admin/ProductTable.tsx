@@ -37,6 +37,11 @@ export default function ProductTable() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadLoading, setUploadLoading] = useState<boolean>(false);
 
+  // State cho Validation & Masking
+  const [displayPrice, setDisplayPrice] = useState<string>("");
+  const [nameError, setNameError] = useState<string>("");
+  const [urlError, setUrlError] = useState<string>("");
+
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [limit] = useState<number>(6);
@@ -80,6 +85,9 @@ export default function ProductTable() {
   };
 
   const handleOpen = async (editProduct?: IProduct) => {
+    setNameError("");
+    setUrlError("");
+
     if (editProduct) {
       setIsEdit(true);
 
@@ -94,6 +102,11 @@ export default function ProductTable() {
         imageUrl: productData.imageUrl || "",
       });
 
+      setDisplayPrice(
+        productData.price
+          ? new Intl.NumberFormat("vi-VN").format(productData.price) + " VND"
+          : ""
+      );
       setPreviewImage(productData.imageUrl || null);
       setSelectedFile(null);
       setPreviewUrlObject(null);
@@ -110,6 +123,7 @@ export default function ProductTable() {
         product_date: new Date(),
       });
 
+      setDisplayPrice("");
       setPreviewImage(null);
       setSelectedFile(null);
       setPreviewUrlObject(null);
@@ -126,6 +140,8 @@ export default function ProductTable() {
     setPreviewImage(null);
     setPreviewUrlObject(null);
     setSelectedFile(null);
+    setNameError("");
+    setUrlError("");
   };
 
   const handleChange = (
@@ -134,6 +150,47 @@ export default function ProductTable() {
     >
   ) => {
     setNewProduct({ ...newProduct, [e.target.name]: e.target.value });
+  };
+
+  // 1. Chặn nhập chữ + Masking ô Giá (100,000 VND)
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, "");
+
+    if (!rawValue) {
+      setDisplayPrice("");
+      setNewProduct((prev) => ({ ...prev, price: 0 }));
+      return;
+    }
+
+    const numericValue = parseInt(rawValue, 10);
+    setNewProduct((prev) => ({ ...prev, price: numericValue }));
+    setDisplayPrice(
+      new Intl.NumberFormat("vi-VN").format(numericValue) + " VND"
+    );
+  };
+
+  // 2. Validate Tên sản phẩm quá 100 ký tự
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length > 100) {
+      setNameError("Tên sản phẩm không được vượt quá 100 ký tự!");
+    } else {
+      setNameError("");
+    }
+    setNewProduct((prev) => ({ ...prev, name: value }));
+  };
+
+  // 3. Validate URL Cloudinary (http:// hoặc https://)
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewProduct((prev) => ({ ...prev, imageUrl: value }));
+
+    const urlPattern = /^(http:\/\/|https:\/\/)/;
+    if (value && !urlPattern.test(value)) {
+      setUrlError("URL hình ảnh phải có prefix http:// hoặc https://");
+    } else {
+      setUrlError("");
+    }
   };
 
   useEffect(() => {
@@ -164,8 +221,16 @@ export default function ProductTable() {
 
   const handleSave = async () => {
     try {
+      if (nameError || urlError) {
+        toast.error("Vui lòng kiểm tra lại thông tin nhập!");
+        return;
+      }
       if (!newProduct.name.trim()) {
         toast.error("Tên sản phẩm không được để trống!");
+        return;
+      }
+      if (newProduct.name.length > 100) {
+        toast.error("Tên sản phẩm vượt quá 100 ký tự!");
         return;
       }
       if (!newProduct.category) {
@@ -390,10 +455,15 @@ export default function ProductTable() {
             <input
               name="name"
               value={newProduct.name}
-              onChange={handleChange}
-              className="w-full border rounded-md p-2"
+              onChange={handleNameChange}
+              className={`w-full border rounded-md p-2 ${
+                nameError ? "border-red-500" : ""
+              }`}
               placeholder="Nhập tên sản phẩm..."
             />
+            {nameError && (
+              <p className="text-red-500 text-xs mt-1">{nameError}</p>
+            )}
           </div>
 
           <div>
@@ -414,7 +484,26 @@ export default function ProductTable() {
           </div>
 
           <div>
-            <label className="block text-gray-600 mb-1">Chọn ảnh:</label>
+            <label className="block text-gray-600 mb-1">
+              URL hình ảnh (Cloudinary):
+            </label>
+            <input
+              name="imageUrl"
+              type="text"
+              value={newProduct.imageUrl}
+              onChange={handleUrlChange}
+              className={`w-full border rounded-md p-2 ${
+                urlError ? "border-red-500" : ""
+              }`}
+              placeholder="http:// hoặc https://..."
+            />
+            {urlError && (
+              <p className="text-red-500 text-xs mt-1">{urlError}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-gray-600 mb-1">Hoặc tải ảnh từ máy:</label>
             <input
               type="file"
               accept="image/*"
@@ -446,11 +535,11 @@ export default function ProductTable() {
             <label className="block text-gray-600 mb-1">Giá (VNĐ):</label>
             <input
               name="price"
-              type="number"
-              value={newProduct.price}
-              onChange={handleChange}
+              type="text"
+              value={displayPrice}
+              onChange={handlePriceChange}
               className="w-full border rounded-md p-2"
-              placeholder="Nhập giá..."
+              placeholder="100,000 VND"
             />
           </div>
 
