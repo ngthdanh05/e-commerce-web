@@ -11,19 +11,14 @@ const toMongoId = (id: string): ObjectId | string => {
 const recalculateCartTotal = async (cart: any) => {
   const productCol = await productCollection.getCollection();
 
-  const productIds = cart.products.map(
-    (p: any) => toMongoId(p.productId)
-  );
+  const productIds = cart.products.map((p: any) => toMongoId(p.productId));
 
   const products = await productCol
     .find({ _id: { $in: productIds } })
     .toArray();
 
   const productMap = new Map(
-    products.map((product: any) => [
-      product._id.toString(),
-      product,
-    ])
+    products.map((product: any) => [product._id.toString(), product]),
   );
 
   let totalPrice = 0;
@@ -83,7 +78,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: "Missing productId or quantity" });
     }
     const productCol = await productCollection.getCollection();
-    
+
     const product = await (productCol as any).findOne({
       _id: toMongoId(productId),
     });
@@ -116,7 +111,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
       await cartCol.insertOne(cart);
     } else {
       const index = cart.products.findIndex(
-        (p: any) => p.productId === productId
+        (p: any) => p.productId === productId,
       );
 
       if (index >= 0) {
@@ -157,7 +152,7 @@ export const updateCart = async (req: AuthRequest, res: Response) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const index = cart.products.findIndex(
-      (p: any) => p.productId === productId
+      (p: any) => p.productId === productId,
     );
 
     if (index < 0)
@@ -195,7 +190,7 @@ export const deleteCart = async (req: AuthRequest, res: Response) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const index = cart.products.findIndex(
-      (p: any) => p.productId === productId
+      (p: any) => p.productId === productId,
     );
     if (index < 0)
       return res.status(404).json({ message: "Product not found in cart" });
@@ -204,7 +199,7 @@ export const deleteCart = async (req: AuthRequest, res: Response) => {
 
     cart.totalPrice = cart.products.reduce(
       (sum: number, p: any) => sum + p.price * p.quantity,
-      0
+      0,
     );
     cart.updated_at = new Date();
 

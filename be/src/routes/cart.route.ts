@@ -11,27 +11,27 @@ import {
   addToCartSchema,
   deleteCartItemSchema,
   updateCartSchema,
-} from "schemas/cart.schemat";
+} from "schemas/cart.schema";
 
 const router = express.Router();
 
 router.get("/", verifyToken, getCart);
 router.post(
   "/add",
-  validate({ body: addToCartSchema }),
   verifyToken,
+  validate({ body: addToCartSchema }),
   addToCart,
 );
 router.put(
   "/update",
-  validate({ body: updateCartSchema }),
   verifyToken,
+  validate({ body: updateCartSchema }),
   updateCart,
 );
 router.delete(
   "/delete",
-  validate({ body: deleteCartItemSchema }),
   verifyToken,
+  validate({ body: deleteCartItemSchema }),
   deleteCart,
 );
 
