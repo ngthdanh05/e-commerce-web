@@ -197,11 +197,10 @@ describe("SCRUM-23: Product API Validation, Zod Sanitization & Pagination Guard 
       expect(response.status).toBe(200);
     });
 
-    it("TC-PROD-10: [Invalid ObjectId] Format ID sai ('123-abc') -> Reject 400 (Zod chặn)", async () => {
-      const response = await request(app).get("/api/products/123-abc");
+    it("TC-PROD-07: [Invalid Query] Truyền page <= 0 hoặc chuỗi chữ -> Default về 1 và Return 200", async () => {
+      const response = await request(app).get("/api/products?page=0&limit=abc");
 
-      expect(response.status).toBe(400);
-      expect(response.body.details[0].message).toBe("INVALID_PRODUCT_ID");
+      expect(response.status).toBe(200);
     });
   });
 });

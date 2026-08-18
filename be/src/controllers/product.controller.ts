@@ -56,7 +56,6 @@ export const getAllProducts = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error(error);
-
     return res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
     });
@@ -89,11 +88,7 @@ export const getProductById = async (req: Request, res: Response) => {
       ...product,
       id: id,
     };
-
-    return res.status(200).json({
-      success: true,
-      data: formattedProduct,
-    });
+    res.json({ success: true, data: formattedProduct });
   } catch (error) {
     console.error(error);
 
@@ -116,11 +111,10 @@ export const createProduct = async (req: Request, res: Response) => {
     const { name, price, description, category, imageUrl, public_id } =
       req.body;
 
-    if (!name || price === undefined || price === null || !description) {
-      return res.status(400).json({
-        error: "Data are required",
-      });
-    }
+    if (!name || !price || !description)
+      return res.status(400).json({ error: "Data are required" });
+
+    const categoryStr = category ? String(category) : "uncategorized";
 
     const categoryStr = category ? String(category) : "uncategorized";
 
@@ -139,9 +133,12 @@ export const createProduct = async (req: Request, res: Response) => {
 
       // Zod đã coerce "5000" -> 5000
       price: Number(price),
-
-      category: sanitizedCategory,
-
+      category: categoryStr
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^\w\-]+/g, ""),
       description,
 
       imageUrl: imageUrl || "",
@@ -192,38 +189,13 @@ export const updateProduct = async (req: Request, res: Response) => {
     const { name, price, category, description, imageUrl, public_id } =
       req.body;
 
-    const updateData: Record<string, any> = {
-      updated_at: new Date(),
-    };
+    if (!name || !price || !description)
+      return res.status(400).json({ error: "Data are required" });
 
-    if (name !== undefined) {
-      updateData.name = name;
-    }
+    const categoryStr = category ? String(category) : "uncategorized";
 
-    if (price !== undefined) {
-      updateData.price = Number(price);
-    }
-
-    if (description !== undefined) {
-      updateData.description = description;
-    }
-
-    if (category !== undefined) {
-      const categoryStr = String(category);
-
-      updateData.category = categoryStr
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\p{L}\p{N}\-_]/gu, "");
-    }
-
-    if (imageUrl !== undefined) {
-      updateData.imageUrl = imageUrl;
-    }
-
-    if (public_id !== undefined) {
-      updateData.public_id = public_id;
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid product ID" });
     }
 
     const col = await productCollection.getCollection();
@@ -233,7 +205,20 @@ export const updateProduct = async (req: Request, res: Response) => {
         _id: new ObjectId(id),
       },
       {
-        $set: updateData,
+        $set: {
+          name,
+          price: Number(price),
+          description,
+          category: categoryStr
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^\w\-]+/g, ""),
+          imageUrl,
+          public_id,
+          updated_at: new Date(),
+        },
       },
     );
 
