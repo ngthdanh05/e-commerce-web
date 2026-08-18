@@ -8,11 +8,12 @@ const objectIdSchema = z.string().refine((val) => ObjectId.isValid(val), {
 // Schema Tạo mới Sản phẩm (POST /api/products)
 export const createProductSchema = z.object({
   name: z.string().min(1, "Name is required").trim(),
-  price: z
+  price: z.coerce
     .number({ message: "Price must be a number" })
     .int("Price must be an integer")
     .min(1000, "Price must be at least 1,000 VND")
     .max(1000000000, "Price must be at most 1,000,000,000 VND"),
+
   description: z.string().min(1, "Description is required").trim(),
   category: z.string().trim().optional().default("uncategorized"),
   imageUrl: z.string().trim().optional().default(""),

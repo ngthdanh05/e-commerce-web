@@ -116,8 +116,6 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const categoryStr = category ? String(category) : "uncategorized";
 
-    const categoryStr = category ? String(category) : "uncategorized";
-
     const sanitizedCategory = categoryStr
       .trim()
       .toLowerCase()
@@ -132,13 +130,8 @@ export const createProduct = async (req: Request, res: Response) => {
       name,
 
       // Zod đã coerce "5000" -> 5000
-      price: Number(price),
-      category: categoryStr
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w\-]+/g, ""),
+      price,
+      category: sanitizedCategory,
       description,
 
       imageUrl: imageUrl || "",
