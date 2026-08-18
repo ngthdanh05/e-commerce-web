@@ -7,16 +7,14 @@ import { userCollection } from "../models/user.model";
 // MOCKING MODULES & DATABASE
 // ============================================================================
 jest.mock("bcryptjs", () => ({
-  hash: jest
-    .fn()
-    .mockResolvedValue("$2a$10$MockHashedPasswordStringWithSalt1234567890"),
-  hashSync: jest
-    .fn()
-    .mockReturnValue("$2a$10$MockHashedPasswordStringWithSalt1234567890"),
-  compare: jest.fn().mockResolvedValue(true),
-  compareSync: jest.fn().mockReturnValue(true),
-  genSalt: jest.fn().mockResolvedValue("$2a$10$MockSalt1234567890"),
+  hash: jest.fn(),
+  hashSync: jest.fn(),
+  compare: jest.fn(),
+  compareSync: jest.fn(),
+  genSalt: jest.fn(),
 }));
+
+const MOCK_HASH = "$2a$10$MockHashedPasswordStringWithSalt1234567890";
 
 jest.mock("../models/user.model", () => ({
   userCollection: {
@@ -28,13 +26,20 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
   let mockCollection: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    (bcrypt.hash as jest.Mock).mockResolvedValue(MOCK_HASH);
+    (bcrypt.hashSync as jest.Mock).mockReturnValue(MOCK_HASH);
+    (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    (bcrypt.compareSync as jest.Mock).mockReturnValue(true);
+    (bcrypt.genSalt as jest.Mock).mockResolvedValue(
+      "$2a$10$MockSalt1234567890",
+    );
 
     mockCollection = {
       findOne: jest.fn(),
-      insertOne: jest
-        .fn()
-        .mockResolvedValue({ acknowledged: true, insertedId: "mock_user_id" }),
+      insertOne: jest.fn().mockResolvedValue({
+        acknowledged: true,
+        insertedId: "mock_user_id",
+      }),
       updateOne: jest.fn(),
       deleteOne: jest.fn(),
     };
@@ -85,13 +90,10 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
       await request(app).post("/api/auth/register").send(payload);
 
       // Sử dụng bcrypt.hash (async) phù hợp với mock
-      expect(bcrypt.hash).toHaveBeenCalledWith(
-        "ValidPassword123!",
-        expect.anything(),
-      );
+      expect(bcrypt.hash).toHaveBeenCalledWith("ValidPassword123!", 10);
       expect(mockCollection.insertOne).toHaveBeenCalledWith(
         expect.objectContaining({
-          password_hash: "$2a$10$MockHashedPasswordStringWithSalt1234567890",
+          password_hash: MOCK_HASH,
         }),
       );
     });
@@ -136,7 +138,7 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
     });
 
     it("TC-AUTH-06: [BVA Max+ Invalid] Email = 255 ký tự -> Reject 400", async () => {
-      const longLocal = "a".repeat(243);
+      const longLocal = "a".repeat(244);
       const email255 = `${longLocal}@domain.com`;
 
       const response = await request(app).post("/api/auth/register").send({

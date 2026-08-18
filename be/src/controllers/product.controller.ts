@@ -44,6 +44,7 @@ export const getAllProducts = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       products: formattedProducts,
+
       pagination: {
         currentPage: page,
         totalPages,
@@ -65,14 +66,23 @@ export const getProductById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!ObjectId.isValid(id))
-      return res.status(400).json({ error: "Data are required" });
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "INVALID_PRODUCT_ID",
+      });
+    }
 
     const col = await productCollection.getCollection();
 
-    const product = await col.findOne({ _id: new ObjectId(id) });
+    const product = await col.findOne({
+      _id: new ObjectId(id),
+    });
 
-    if (!product) return res.status(404).json({ error: "Product not found" });
+    if (!product) {
+      return res.status(404).json({
+        error: "Product not found",
+      });
+    }
 
     const formattedProduct = {
       ...product,
@@ -81,16 +91,23 @@ export const getProductById = async (req: Request, res: Response) => {
     res.json({ success: true, data: formattedProduct });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "INTERNAL_SERVER_ERROR" });
+
+    return res.status(500).json({
+      error: "INTERNAL_SERVER_ERROR",
+    });
   }
 };
 
 export const createProduct = async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+
     if (!user) {
-      return res.status(401).json({ message: "Please login to continue" });
+      return res.status(401).json({
+        message: "Please login to continue",
+      });
     }
+
     const { name, price, description, category, imageUrl, public_id } =
       req.body;
 
@@ -99,11 +116,22 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const categoryStr = category ? String(category) : "uncategorized";
 
+    const categoryStr = category ? String(category) : "uncategorized";
+
+    const sanitizedCategory = categoryStr
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^\p{L}\p{N}\-_]/gu, "");
+
     const col = await productCollection.getCollection();
 
     const newProduct = {
       _id: new ObjectId(),
+
       name,
+
+      // Zod đã coerce "5000" -> 5000
       price: Number(price),
       category: categoryStr
         .normalize("NFD")
@@ -112,29 +140,51 @@ export const createProduct = async (req: Request, res: Response) => {
         .replace(/\s+/g, "-")
         .replace(/[^\w\-]+/g, ""),
       description,
+
       imageUrl: imageUrl || "",
+
       public_id: public_id || "",
+
       created_at: new Date(),
+
       updated_at: new Date(),
     };
 
     const result = await col.insertOne(newProduct);
+
     if (!result.acknowledged) {
-      return res.status(500).json({ error: "Failed to add blog" });
+      return res.status(500).json({
+        error: "Failed to add product",
+      });
     }
 
-    const insertedProduct = { ...newProduct, id: newProduct._id.toString() };
+    const insertedProduct = {
+      ...newProduct,
+      id: newProduct._id.toString(),
+    };
 
-    res.status(200).json({ success: true, product: insertedProduct });
+    return res.status(200).json({
+      success: true,
+      product: insertedProduct,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "INTERNAL_SERVER_ERROR" });
+
+    return res.status(500).json({
+      error: "INTERNAL_SERVER_ERROR",
+    });
   }
 };
 
 export const updateProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "INVALID_PRODUCT_ID",
+      });
+    }
 
     const { name, price, category, description, imageUrl, public_id } =
       req.body;
@@ -172,13 +222,21 @@ export const updateProduct = async (req: Request, res: Response) => {
       },
     );
 
-    if (result.modifiedCount === 0) {
-      return res.status(500).json({ error: "Failed to update product" });
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        error: "Product not found",
+      });
     }
-    res.json({ success: true });
+
+    return res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+
+    return res.status(500).json({
+      error: "INTERNAL_SERVER_ERROR",
+    });
   }
 };
 
@@ -186,26 +244,40 @@ export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    if (!id || !ObjectId.isValid(id))
-      return res.status(400).json({ error: "Product ID is required" });
+    if (!id || !ObjectId.isValid(id)) {
+      return res.status(400).json({
+        error: "INVALID_PRODUCT_ID",
+      });
+    }
 
     const col = await productCollection.getCollection();
 
-    const product = await col.findOne({ _id: new ObjectId(id) });
+    const product = await col.findOne({
+      _id: new ObjectId(id),
+    });
 
     if (!product) {
-      return res.status(404).json({ error: "PRODUCT_NOT_FOUND" });
+      return res.status(404).json({
+        error: "PRODUCT_NOT_FOUND",
+      });
     }
 
     if (product.public_id) {
       await cloudinary.uploader.destroy(product.public_id);
     }
 
-    await col.deleteOne({ _id: new ObjectId(id) });
+    await col.deleteOne({
+      _id: new ObjectId(id),
+    });
 
-    res.json({ success: true });
+    return res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ error: "Internal server error" });
+
+    return res.status(500).json({
+      error: "Internal server error",
+    });
   }
 };
