@@ -1,0 +1,1293 @@
+{
+    "info": {
+      "_postman_id": "7b23823e-ba67-4ff6-a611-8b07f37697ec",
+      "name": "Sprint - 4",
+      "description": "Auth module - registration, login, email/password validation, blocked user",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+      "_exporter_id": "39845541",
+      "_collection_link": "https://go.postman.co/collection/39845541-7b23823e-ba67-4ff6-a611-8b07f37697ec?source=collection_link"
+    },
+    "item": [
+      {
+        "name": "01. Auth & Account Management",
+        "item": [
+          {
+            "name": "TC01 - BVA Email: Min Email",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Response body indicates success\", function () { const json = pm.response.json(); pm.expect(json).to.have.property('success', true); });"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"a@b.c\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC02 - BVA Email: Max Email",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Response body indicates success\", function () { const json = pm.response.json(); pm.expect(json).to.have.property('success', true); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@domain.com\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC03 - BVA Email: Exceed Email",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                    "pm.test(\"Response contains validation error\", function () { const json = pm.response.json(); const hasError = typeof json === 'string' ? json.length > 0 : !!(json.error || json.message || json.success === false); pm.expect(hasError).to.be.true; });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@domain.com\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC04 - BVA Password: Min Password Invalid",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                    "pm.test(\"Response contains validation error\", function () { const json = pm.response.json(); const hasError = typeof json === 'string' ? json.length > 0 : !!(json.error || json.message || json.success === false); pm.expect(hasError).to.be.true; });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"valid@example.com\",\n  \"password\": \"Abc123!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC05 - BVA Password: Min Password Valid",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Response body indicates success\", function () { const json = pm.response.json(); pm.expect(json).to.have.property('success', true); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"valid@example.com\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC06 - Password Format Invalid",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                    "pm.test(\"Response contains validation error\", function () { const json = pm.response.json(); const hasError = typeof json === 'string' ? json.length > 0 : !!(json.error || json.message || json.success === false); pm.expect(hasError).to.be.true; });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"invalidpass@example.com\",\n  \"password\": \"password123\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC07 - Duplicate Email",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                    "pm.test(\"Duplicate email returns ACCOUNT_ALREADY_EXISTS\", function () { const json = pm.response.json(); const isExpected = json === 'ACCOUNT_ALREADY_EXISTS' || (typeof json === 'object' && (json.error === 'ACCOUNT_ALREADY_EXISTS' || json.message === 'ACCOUNT_ALREADY_EXISTS')); pm.expect(isExpected).to.be.true; });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Existing User\",\n  \"email\": \"existing@example.com\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/register",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "register"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC08 - Login Valid",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                    "pm.test(\"Login response contains token and success flag\", function () { const json = pm.response.json(); pm.expect(json).to.have.property('success', true); pm.expect(json).to.have.property('data'); pm.expect(json.data).to.have.property('token'); pm.expect(json.data.token).to.be.a('string'); pm.expect(json.data.token.length).to.be.greaterThan(0); });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"valid@example.com\",\n  \"password\": \"Abc1234!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/login",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "login"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC09 - Blocked User Login",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 403\", function () { pm.response.to.have.status(403); });",
+                    "pm.test(\"Blocked user response contains error message\", function () { const json = pm.response.json(); const hasError = typeof json === 'string' ? json.length > 0 : !!(json.error || json.message); pm.expect(hasError).to.be.true; });"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n   \"email\": \"userA@example.com\",\n  \"password\": \"P@assword123\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/login",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "login"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC10 - Invalid Password Login",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 401\", function () { pm.response.to.have.status(401); });",
+                    "pm.test(\"Invalid password response contains error flag\", function () { const json = pm.response.json(); const hasError = typeof json === 'string' ? json.length > 0 : !!(json.error || json.message || json.success === false); pm.expect(hasError).to.be.true; });"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"valid@example.com\",\n  \"password\": \"WrongPassword1!\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/auth/login",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "auth",
+                  "login"
+                ]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "02. Product CRUD & Category",
+        "item": [
+          {
+            "name": "TC01 - Create Product - price 0 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"TC01 - Status code is 400\", function () {",
+                    "    pm.response.to.have.status(400);",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "key": "token",
+                    "value": "{{token}}",
+                    "type": "string"
+                  }
+                ]
+              },
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"QA Test Product 0\",\n  \"price\": 0,\n  \"description\": \"QA boundary test\",\n  \"category\": \"test\",\n  \"imageUrl\": \"https://example.com/test.jpg\",\n  \"public_id\": \"\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/products",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "admin",
+                  "products"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC02 - Create Product - price 999 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"TC02 - Status code is 400\", function () {",
+                    "    pm.response.to.have.status(400);",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "key": "token",
+                    "value": "{{token}}",
+                    "type": "string"
+                  }
+                ]
+              },
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"QA Test Product 999\",\n  \"price\": 999,\n  \"description\": \"QA boundary test\",\n  \"category\": \"test\",\n  \"imageUrl\": \"https://example.com/test.jpg\",\n  \"public_id\": \"\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/products",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "admin",
+                  "products"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC03 - Create Product - price 1000 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"TC03 - Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"TC03 - Product created successfully\", function () {",
+                    "    const data = pm.response.json();",
+                    "",
+                    "    pm.expect(data.success).to.eql(true);",
+                    "    pm.expect(data).to.have.property(\"product\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "key": "token",
+                    "value": "{{token}}",
+                    "type": "string"
+                  }
+                ]
+              },
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"QA Test Product 1000\",\n  \"price\": 1000,\n  \"description\": \"QA valid boundary test\",\n  \"category\": \"test\",\n  \"imageUrl\": \"https://example.com/test.jpg\",\n  \"public_id\": \"\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/admin/products",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "admin",
+                  "products"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC04 - Get Product - Not Found Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"TC04 - Status code is 404\", function () {",
+                    "    pm.response.to.have.status(404);",
+                    "});",
+                    "",
+                    "pm.test(\"TC04 - Product not found\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data.error).to.eql(\"Product not found\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "key": "token",
+                    "value": "{{token}}",
+                    "type": "string"
+                  }
+                ]
+              },
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439999",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "products",
+                  "507f1f77bcf86cd799439999"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC05 - Get Product - Invalid ID Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"TC05 - Status code is 400\", function () {",
+                    "    pm.response.to.have.status(400);",
+                    "});",
+                    "",
+                    "pm.test(\"TC05 - Invalid product ID is rejected\", function () {",
+                    "    const data = pm.response.json();",
+                    "",
+                    "    pm.expect(data.error).to.eql(\"VALIDATION_ERROR\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "protocolProfileBehavior": {
+              "disableBodyPruning": true
+            },
+            "request": {
+              "auth": {
+                "type": "bearer",
+                "bearer": [
+                  {
+                    "key": "token",
+                    "value": "{{token}}",
+                    "type": "string"
+                  }
+                ]
+              },
+              "method": "GET",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "http://localhost:3000/api/products/123-xyz",
+                "protocol": "http",
+                "host": [
+                  "localhost"
+                ],
+                "port": "3000",
+                "path": [
+                  "api",
+                  "products",
+                  "123-xyz"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC07 - Get Products - Page 2 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response contains products\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data).to.have.property(\"products\");",
+                    "});",
+                    "",
+                    "pm.test(\"Response contains pagination\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data).to.have.property(\"pagination\");",
+                    "});",
+                    "",
+                    "pm.test(\"Current page is 2\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data.pagination.currentPage).to.eql(2);",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/products?page=2&limit=10",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "products"
+                ],
+                "query": [
+                  {
+                    "key": "page",
+                    "value": "2"
+                  },
+                  {
+                    "key": "limit",
+                    "value": "10"
+                  }
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "TC06 - Get Products - Page 1 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response contains products\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data).to.have.property(\"products\");",
+                    "});",
+                    "",
+                    "pm.test(\"Response contains pagination\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data).to.have.property(\"pagination\");",
+                    "});",
+                    "",
+                    "pm.test(\"Current page is 1\", function () {",
+                    "    const data = pm.response.json();",
+                    "    pm.expect(data.pagination.currentPage).to.eql(1);",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Accept",
+                  "value": "application/json"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/products?page=1&limit=10",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "products"
+                ],
+                "query": [
+                  {
+                    "key": "page",
+                    "value": "1"
+                  },
+                  {
+                    "key": "limit",
+                    "value": "10"
+                  }
+                ]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
+      {
+        "name": "03. Cart & Edge Cases",
+        "item": [
+          {
+            "name": "TC01 - Add item quantity 0 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "// Expect Status Code 400 Bad Request",
+                    "pm.test(\"Status code is 400 Bad Request\", function () {",
+                    "    pm.response.to.have.status(400);",
+                    "});",
+                    "",
+                    "// Expect Response chứa thông báo validation error",
+                    "pm.test(\"Response body contains validation error\", function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    // Kiểm tra linh hoạt theo cấu trúc middleware validate của bạn",
+                    "    pm.expect(jsonData).to.have.property(\"error\").that.is.a(\"string\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"productId\": \"{{validProductId}}\",\n    \"quantity\": 0\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/cart/add",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart",
+                  "add"
+                ]
+              },
+              "description": "Kiểm thử thêm sản phẩm vào giỏ hàng với số lượng bằng 0 (Biên Min- Invalid). Mong đợi HTTP 400 Bad Request."
+            },
+            "response": []
+          },
+          {
+            "name": "TC02 - Add item quantity 1 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "// Expect Status Code 200 OK",
+                    "pm.test(\"Status code is 200 OK\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response confirms product added successfully\", function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.be.an(\"object\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"productId\": \"{{validProductId}}\",\n    \"quantity\": 1\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/cart/add",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart",
+                  "add"
+                ]
+              },
+              "description": "Kiểm thử thêm sản phẩm vào giỏ hàng với số lượng bằng 1 (Biên Min Valid). Mong đợi HTTP 200 OK."
+            },
+            "response": []
+          },
+          {
+            "name": "TC03 - Add item quantity 99 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "// Expect Status Code 200 OK",
+                    "pm.test(\"Status code is 200 OK\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Response confirms product added successfully\", function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.be.an(\"object\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"productId\": \"{{validProductId}}\",\n    \"quantity\": 99\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/cart/add",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart",
+                  "add"
+                ]
+              },
+              "description": "Kiểm thử thêm sản phẩm vào giỏ hàng với số lượng bằng 99 (Biên Max Valid). Mong đợi HTTP 200 OK."
+            },
+            "response": []
+          },
+          {
+            "name": "TC04 - Add item quantity 100 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "// Expect Status Code 400 Bad Request",
+                    "pm.test(\"Status code is 400 Bad Request\", function () {",
+                    "    pm.response.to.have.status(400);",
+                    "});",
+                    "",
+                    "// Expect Response chứa thông báo validation error",
+                    "pm.test(\"Response body contains validation error\", function () {",
+                    "    const jsonData = pm.response.json();",
+                    "    // Kiểm tra linh hoạt theo cấu trúc middleware validate của bạn",
+                    "    pm.expect(jsonData).to.have.property(\"error\").that.is.a(\"string\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"productId\": \"{{validProductId}}\",\n    \"quantity\": 100\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/cart/add",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart",
+                  "add"
+                ]
+              },
+              "description": "Kiểm thử thêm sản phẩm vào giỏ hàng với số lượng bằng 100 (Biên Max+ Invalid). Mong đợi HTTP 400 Bad Request."
+            },
+            "response": []
+          },
+          {
+            "name": "TC05 - Update item quantity 0 Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200 OK\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Verify product is removed from cart or updated successfully\", function () {",
+                    "    var jsonData = pm.response.json();",
+                    "    pm.expect(jsonData).to.be.an('object');",
+                    "    ",
+                    "    if (jsonData.data && jsonData.data.products) {",
+                    "        var existingItem = jsonData.data.products.find(p => p.productId === pm.environment.get(\"validProductId\"));",
+                    "        pm.expect(existingItem).to.be.undefined;",
+                    "    }",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "PUT",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"productId\": \"{{validProductId}}\",\n    \"quantity\": 0\n}"
+              },
+              "url": {
+                "raw": "{{baseUrl}}/api/cart/update",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart",
+                  "update"
+                ]
+              },
+              "description": "Cập nhật số lượng sản phẩm trong giỏ hàng về 0. Hệ thống tự động xóa sản phẩm ra khỏi giỏ hàng. Mong đợi HTTP 200 OK."
+            },
+            "response": []
+          },
+          {
+            "name": "TC06 - Dynamic Price Change Check Copy",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200 OK\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"Verify totalPrice is dynamically and accurately calculated\", function () {",
+                    "    var jsonData = pm.response.json();",
+                    "    var cartData = jsonData.data || jsonData;",
+                    "    ",
+                    "    pm.expect(cartData).to.have.property('products');",
+                    "    pm.expect(cartData).to.have.property('totalPrice');",
+                    "    ",
+                    "    var calculatedTotal = 0;",
+                    "    if (Array.isArray(cartData.products)) {",
+                    "        cartData.products.forEach(function(item) {",
+                    "            calculatedTotal += (item.price * item.quantity);",
+                    "        });",
+                    "    }",
+                    "    ",
+                    "    pm.expect(cartData.totalPrice).to.eql(calculatedTotal);",
+                    "});"
+                  ],
+                  "type": "text/javascript"
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "url": {
+                "raw": "{{baseUrl}}/api/cart",
+                "host": [
+                  "{{baseUrl}}"
+                ],
+                "path": [
+                  "api",
+                  "cart"
+                ]
+              },
+              "description": "Lấy thông tin giỏ hàng và kiểm tra tổng giá tiền totalPrice được Server tự động tính lại chuẩn xác theo công thức sum(price * quantity)."
+            },
+            "response": []
+          }
+        ],
+        "event": [
+          {
+            "listen": "prerequest",
+            "script": {
+              "type": "text/javascript",
+              "packages": {},
+              "requests": {},
+              "exec": [
+                "// Tự động gọi API Login để lấy Token mới trước khi chạy test cart\r",
+                "pm.sendRequest({\r",
+                "    url: pm.environment.get(\"baseUrl\") + \"/api/auth/login\", // Đường dẫn API Login\r",
+                "    method: 'POST',\r",
+                "    header: {\r",
+                "        'Content-Type': 'application/json'\r",
+                "    },\r",
+                "    body: {\r",
+                "        mode: 'raw',\r",
+                "        raw: JSON.stringify({\r",
+                "            email: \"userA@example.com\",\r",
+                "            password: \"P@assword123\"    \r",
+                "        })\r",
+                "    }\r",
+                "}, function (err, response) {\r",
+                "    if (!err && response.code === 200) {\r",
+                "        const jsonData = response.json();\r",
+                "        // Lưu token vào biến environment\r",
+                "        pm.environment.set(\"token\", jsonData.token || jsonData.accessToken);\r",
+                "        console.log(\"Auto-login successfully! Token updated.\");\r",
+                "    } else {\r",
+                "        console.error(\"Auto-login failed:\", response.text());\r",
+                "    }\r",
+                "});"
+              ]
+            }
+          },
+          {
+            "listen": "test",
+            "script": {
+              "type": "text/javascript",
+              "packages": {},
+              "requests": {},
+              "exec": [
+                ""
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "event": [
+      {
+        "listen": "prerequest",
+        "script": {
+          "type": "text/javascript",
+          "packages": {},
+          "requests": {},
+          "exec": [
+            ""
+          ]
+        }
+      },
+      {
+        "listen": "test",
+        "script": {
+          "type": "text/javascript",
+          "packages": {},
+          "requests": {},
+          "exec": [
+            ""
+          ]
+        }
+      }
+    ],
+    "variable": [
+      {
+        "key": "baseUrl",
+        "value": "http://localhost:5000"
+      }
+    ]
+  }
