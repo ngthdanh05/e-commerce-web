@@ -50,8 +50,12 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       toArray: jest.fn().mockResolvedValue([]),
     };
 
-    (orderCollection.getCollection as jest.Mock).mockResolvedValue(mockOrderCollection);
-    (userCollection.getCollection as jest.Mock).mockResolvedValue(mockUserCollection);
+    (orderCollection.getCollection as jest.Mock).mockResolvedValue(
+      mockOrderCollection,
+    );
+    (userCollection.getCollection as jest.Mock).mockResolvedValue(
+      mockUserCollection,
+    );
 
     // Mock JWT decode default
     (jwt.verify as jest.Mock).mockImplementation((token: string) => {
@@ -66,24 +70,25 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
   // 1. AUTHORIZATION GUARDS & ADMIN SECURITY
   // ============================================================================
   describe("Authorization Guards - User Ownership & Admin Only Rules", () => {
-
     it("TC_ORDER_AUTH_01: [Admin Guard] User thường không phải Admin truy cập GET /api/orders/admin -> Reject 403 FORBIDDEN_ADMIN_ONLY", async () => {
       const response = await request(app)
-        .get("/api/orders/admin")
+        .get("/api/admin/orders")
         .set("Authorization", normalUserToken);
 
       expect(response.status).toBe(403);
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/FORBIDDEN_ADMIN_ONLY/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(/FORBIDDEN_ADMIN_ONLY/i),
+          }),
         ]),
       });
     });
 
     it("TC_ORDER_AUTH_02: [Admin Guard] Admin truy cập GET /api/orders/admin -> Accept 200", async () => {
       const response = await request(app)
-        .get("/api/orders/admin")
+        .get("/api/admin/orders")
         .set("Authorization", adminUserToken);
 
       expect(response.status).toBe(200);
@@ -105,7 +110,9 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/FORBIDDEN/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(/FORBIDDEN/i),
+          }),
         ]),
       });
     });
@@ -115,7 +122,6 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
   // 2. ORDER DELETION GUARD & POLICY
   // ============================================================================
   describe("DELETE /api/orders/:id - Order Deletion Status Guard", () => {
-
     it("TC_ORDER_DEL_04: [Valid Delete] User xóa đơn hàng của chính mình khi status === 'pending' -> Accept 200", async () => {
       mockOrderCollection.findOne.mockResolvedValue({
         orderId: "PAY111111",
@@ -128,7 +134,9 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
         .set("Authorization", normalUserToken);
 
       expect(response.status).toBe(200);
-      expect(mockOrderCollection.deleteOne).toHaveBeenCalledWith({ orderId: "PAY111111" });
+      expect(mockOrderCollection.deleteOne).toHaveBeenCalledWith({
+        orderId: "PAY111111",
+      });
       expect(response.body.success).toBe(true);
     });
 
@@ -147,7 +155,11 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/CANNOT_DELETE_ACTIVE_ORDER|Order cannot be deleted/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(
+              /CANNOT_DELETE_ACTIVE_ORDER|Order cannot be deleted/i,
+            ),
+          }),
         ]),
       });
     });
@@ -171,8 +183,7 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
   // ============================================================================
   // 3. ORDER STATE MACHINE & TRANSITION RULES
   // ============================================================================
-  describe("PUT /api/orders/admin/:id - Status Transitions (State Machine)", () => {
-
+  describe("PUT /api/admin/orders/:id - Status Transitions (State Machine)", () => {
     it("TC_ORDER_STATE_07: [Valid Transition] Admin chuyển trạng thái từ 'pending' sang 'processing' / 'shipping' / 'success' -> Accept 200", async () => {
       const validTransitions = ["processing", "shipping", "success"];
 
@@ -183,7 +194,7 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
         });
 
         const response = await request(app)
-          .put("/api/orders/admin/PAY444444")
+          .put("/api/admin/orders/PAY444444")
           .set("Authorization", adminUserToken)
           .send({ status: newStatus });
 
@@ -199,7 +210,7 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       });
 
       const response = await request(app)
-        .put("/api/orders/admin/PAY555555")
+        .put("/api/admin/orders/PAY555555")
         .set("Authorization", adminUserToken)
         .send({ status: "pending" }); // Chuyển ngược bất hợp lệ
 
@@ -207,7 +218,11 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/ILLEGAL_STATUS_TRANSITION|INVALID_STATUS/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(
+              /ILLEGAL_STATUS_TRANSITION|INVALID_STATUS/i,
+            ),
+          }),
         ]),
       });
     });
@@ -219,7 +234,7 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       });
 
       const response = await request(app)
-        .put("/api/orders/admin/PAY666666")
+        .put("/api/admin/orders/PAY666666")
         .set("Authorization", adminUserToken)
         .send({ status: "pending" });
 
@@ -234,7 +249,7 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       });
 
       const response = await request(app)
-        .put("/api/orders/admin/PAY777777")
+        .put("/api/admin/orders/PAY777777")
         .set("Authorization", adminUserToken)
         .send({ status: "invalid_status_value" });
 
@@ -242,7 +257,9 @@ describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test 
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/INVALID_STATUS/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(/INVALID_STATUS/i),
+          }),
         ]),
       });
     });

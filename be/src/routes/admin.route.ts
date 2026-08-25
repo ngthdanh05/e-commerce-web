@@ -16,7 +16,7 @@ import {
   updateOrderForAdmin,
 } from "controllers/order.controller";
 import { getDashboardData } from "controllers/dashboard.controller";
-import { verifyToken } from "middleware/auth";
+import { isAdmin, verifyToken } from "middleware/auth";
 import {
   createProduct,
   deleteProduct,
@@ -70,7 +70,7 @@ router.put(
 );
 router.delete("/users/:id", verifyToken, deleteUser);
 
-router.get("/orders", verifyToken, getOrderForAdmin);
-router.put("/orders/:id", verifyToken, updateOrderForAdmin);
-router.delete("/orders/:id", verifyToken, deleteOrderForAdmin);
+router.get("/orders", verifyToken, isAdmin, getOrderForAdmin);
+router.put("/orders/:id", verifyToken, isAdmin, updateOrderForAdmin);
+router.delete("/orders/:id", verifyToken, isAdmin, deleteOrderForAdmin);
 export default router;

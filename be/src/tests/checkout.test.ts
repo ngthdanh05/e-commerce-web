@@ -1,5 +1,4 @@
 import request from "supertest";
-import app from "../app";
 import crypto from "crypto";
 import { checkoutCollection } from "../models/checkout.model";
 import { cartCollection } from "../models/cart.model";
@@ -8,17 +7,32 @@ import { orderCollection } from "../models/order.model";
 // ============================================================================
 // MOCKING MODULES & DATABASE
 // ============================================================================
-jest.mock("../middleware/auth", () => ({
+// Mock đồng bộ cả relative đường dẫn và absolute path nếu dùng tsconfig alias
+const mockAuth = {
   verifyToken: (req: any, res: any, next: any) => {
     req.user = {
       _id: "507f1f77bcf86cd799439011",
       email: "user@example.com",
       role: "user",
     };
-
     next();
   },
-}));
+  isAdmin: (req: any, res: any, next: any) => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        errors: [{ message: "FORBIDDEN_ADMIN_ONLY" }],
+      });
+    }
+    next();
+  },
+};
+
+jest.mock("../middleware/auth", () => mockAuth);
+jest.mock("middleware/auth", () => mockAuth);
+
+// Import app sau khi đã mock middleware
+import app from "../app";
 
 jest.mock("../models/checkout.model", () => ({
   checkoutCollection: { getCollection: jest.fn() },
@@ -41,8 +55,8 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
 
   const validShippingInfo = {
     fullName: "Nguyễn Văn A",
-    phoneNumber: "0912345678", // Valid 10 digits
-    address: "123 Đường Lê Lợi, Quận 1, TP.HCM", // > 10 chars
+    phoneNumber: "0912345678",
+    address: "123 Đường Lê Lợi, Quận 1, TP.HCM",
     email: "test@example.com",
   };
 
@@ -79,16 +93,21 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
       insertOne: jest.fn().mockResolvedValue({ acknowledged: true }),
     };
 
-    (checkoutCollection.getCollection as jest.Mock).mockResolvedValue(mockCheckoutCollection);
-    (cartCollection.getCollection as jest.Mock).mockResolvedValue(mockCartCollection);
-    (orderCollection.getCollection as jest.Mock).mockResolvedValue(mockOrderCollection);
+    (checkoutCollection.getCollection as jest.Mock).mockResolvedValue(
+      mockCheckoutCollection,
+    );
+    (cartCollection.getCollection as jest.Mock).mockResolvedValue(
+      mockCartCollection,
+    );
+    (orderCollection.getCollection as jest.Mock).mockResolvedValue(
+      mockOrderCollection,
+    );
   });
 
   // ============================================================================
   // 1. EMPTY CART CHECK
   // ============================================================================
   describe("POST /api/checkout - Empty Cart Protection Guard", () => {
-
     it("TC_CHECKOUT_EMPTY_01: [Empty Cart] Cart rỗng (products.length === 0) -> Reject 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED", async () => {
       mockCartCollection.findOne.mockResolvedValue({
         userId: "507f1f77bcf86cd799439011",
@@ -108,7 +127,11 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/EMPTY_CART_CHECKOUT_NOT_ALLOWED|Giỏ hàng không tồn tại/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(
+              /EMPTY_CART_CHECKOUT_NOT_ALLOWED|Giỏ hàng không tồn tại/i,
+            ),
+          }),
         ]),
       });
     });
@@ -133,10 +156,6 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
   // 2. SHIPPING INFO VALIDATION (BVA & EP)
   // ============================================================================
   describe("POST /api/checkout - Shipping Info BVA & EP Validation", () => {
-
-    // --------------------------------------------------------------------------
-    // Phone Number Tests
-    // --------------------------------------------------------------------------
     it("TC_CHECKOUT_BVA_01: [Valid Phone] Số điện thoại chuẩn 10 số đầu 09 -> Accept 200", async () => {
       const response = await request(app)
         .post("/api/checkout")
@@ -156,7 +175,7 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         .set("Authorization", validAuthHeader)
         .send({
           typePayment: "cod",
-          shippingInfo: { ...validShippingInfo, phoneNumber: "091234567" }, // 9 digits
+          shippingInfo: { ...validShippingInfo, phoneNumber: "091234567" },
         });
 
       expect(response.status).toBe(400);
@@ -177,7 +196,7 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         .set("Authorization", validAuthHeader)
         .send({
           typePayment: "cod",
-          shippingInfo: { ...validShippingInfo, phoneNumber: "09123456789" }, // 11 digits
+          shippingInfo: { ...validShippingInfo, phoneNumber: "09123456789" },
         });
 
       expect(response.status).toBe(400);
@@ -185,7 +204,7 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
       expect(response.body.errors).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ field: "shippingInfo.phoneNumber" }),
-        ])
+        ]),
       );
     });
 
@@ -195,23 +214,20 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         .set("Authorization", validAuthHeader)
         .send({
           typePayment: "cod",
-          shippingInfo: { ...validShippingInfo, phoneNumber: "0123456789" }, // Invalid prefix 01
+          shippingInfo: { ...validShippingInfo, phoneNumber: "0123456789" },
         });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
-    // --------------------------------------------------------------------------
-    // Address BVA Tests
-    // --------------------------------------------------------------------------
     it("TC_CHECKOUT_BVA_05: [BVA Min- Address] Địa chỉ 9 ký tự -> Reject 400 ADDRESS_TOO_SHORT", async () => {
       const response = await request(app)
         .post("/api/checkout")
         .set("Authorization", validAuthHeader)
         .send({
           typePayment: "cod",
-          shippingInfo: { ...validShippingInfo, address: "Số 1 HCM" }, // 8-9 chars
+          shippingInfo: { ...validShippingInfo, address: "Số 1 HCM" },
         });
 
       expect(response.status).toBe(400);
@@ -232,7 +248,7 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         .set("Authorization", validAuthHeader)
         .send({
           typePayment: "cod",
-          shippingInfo: { ...validShippingInfo, address: "1234567890" }, // 10 chars
+          shippingInfo: { ...validShippingInfo, address: "1234567890" },
         });
 
       expect(response.status).toBe(200);
@@ -273,13 +289,10 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
             field: "shippingInfo.address",
             message: expect.stringMatching(/ADDRESS_TOO_LONG/i),
           }),
-        ])
+        ]),
       );
     });
 
-    // --------------------------------------------------------------------------
-    // Payment Type Enum Tests
-    // --------------------------------------------------------------------------
     it("TC_CHECKOUT_EP_09: [Valid Payment Type] Chấp nhận 'cod' và 'vnpay' -> Accept 200", async () => {
       for (const typePayment of ["cod", "vnpay"]) {
         const response = await request(app)
@@ -325,7 +338,6 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
   // 3. VNPAY SECURITY & CALLBACK CHECKSUM
   // ============================================================================
   describe("GET /api/checkout/vnpay-callback - Checksum & Security Hash Fix", () => {
-
     it("TC_CHECKOUT_VNPAY_11: [Tampered Hash] Chữ ký vnp_SecureHash bị giả mạo/sai lệch -> Reject 400 INVALID_CHECKSUM", async () => {
       mockCheckoutCollection.findOne.mockResolvedValue({
         orderId: "PAY123456",
@@ -335,21 +347,26 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
       });
 
       const response = await request(app).get(
-        "/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId%3DPAY123456&vnp_SecureHash=INVALID_TAMPERED_HASH_STRING"
+        "/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId%3DPAY123456&vnp_SecureHash=INVALID_TAMPERED_HASH_STRING",
       );
 
       expect(response.status).toBe(400);
       expect(response.body).toEqual({
         success: false,
         errors: expect.arrayContaining([
-          expect.objectContaining({ message: expect.stringMatching(/INVALID_CHECKSUM|Chữ ký không hợp lệ/i) }),
+          expect.objectContaining({
+            message: expect.stringMatching(
+              /INVALID_CHECKSUM|Chữ ký không hợp lệ/i,
+            ),
+          }),
         ]),
       });
     });
 
     it("TC_CHECKOUT_VNPAY_12: [Valid Hash & Payment Success] Chữ ký hợp lệ & vnp_ResponseCode=00 -> Confirm Order Success & Reset Cart", async () => {
       const orderId = "PAY123456";
-      const tmnSecret = process.env.VNP_HASHSECRET || "DXGVPNRODG7MNLJ3JNH1BWYVX7SKDCRZ";
+      const tmnSecret =
+        process.env.VNP_HASHSECRET || "DXGVPNRODG7MNLJ3JNH1BWYVX7SKDCRZ";
 
       mockCheckoutCollection.findOne.mockResolvedValue({
         orderId,
@@ -366,7 +383,6 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         vnp_TxnRef: orderId,
       };
 
-      // Tạo chữ ký HMAC-SHA512 chuẩn
       const sortedKeys = Object.keys(queryParams).sort();
       const signData = sortedKeys
         .map((key) => `${key}=${queryParams[key]}`)
@@ -382,15 +398,16 @@ describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Securit
         vnp_SecureHash: validHash,
       }).toString();
 
-      const response = await request(app).get(`/api/checkout/vnpay-callback?${queryString}`);
+      const response = await request(app).get(
+        `/api/checkout/vnpay-callback?${queryString}`,
+      );
 
-      // Verify redirect or status 200
       expect([200, 302]).toContain(response.status);
       expect(mockCheckoutCollection.updateOne).toHaveBeenCalledWith(
         { orderId },
         expect.objectContaining({
           $set: expect.objectContaining({ status: "success" }),
-        })
+        }),
       );
     });
   });
