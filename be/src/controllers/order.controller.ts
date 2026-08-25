@@ -70,9 +70,23 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
     const { id: orderId } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "success", "failed"];
+    const validStatuses = [
+      "pending",
+      "processing",
+      "shipping",
+      "success",
+      "failed",
+      "cancelled",
+    ];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: "INVALID_STATUS" });
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "INVALID_STATUS",
+          },
+        ],
+      });
     }
 
     const orderCol = await orderCollection.getCollection();
