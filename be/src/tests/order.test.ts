@@ -19,7 +19,7 @@ jest.mock("../models/user.model", () => ({
   userCollection: { getCollection: jest.fn() },
 }));
 
-describe("TASK 2: Order State Machine Enforcement & Admin Control Security Test Suite", () => {
+describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security Test Suite", () => {
   let mockOrderCollection: any;
   let mockUserCollection: any;
 

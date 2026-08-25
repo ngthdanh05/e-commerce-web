@@ -46,7 +46,7 @@ jest.mock("../models/order.model", () => ({
   orderCollection: { getCollection: jest.fn() },
 }));
 
-describe("TASK 1: Checkout Shipping Validation, Empty Cart Guard & VNPay Security Test Suite", () => {
+describe("SCRUM - 26: Checkout Shipping Validation, Empty Cart Guard & VNPay Security Test Suite", () => {
   let mockCheckoutCollection: any;
   let mockCartCollection: any;
   let mockOrderCollection: any;
