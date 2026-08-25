@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
 export const verifyToken = (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const token =
     req.cookies.session_token || req.headers.authorization?.split(" ")[1];
@@ -40,10 +40,18 @@ export const verifyToken = (
 export const isAdmin = (
   req: AuthRequest,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   if (req.user?.role !== "admin") {
-    return res.status(403).json({ error: "FORBIDDEN_ADMIN_ONLY" });
+    return res.status(403).json({
+      success: false,
+      errors: [
+        {
+          message: "FORBIDDEN_ADMIN_ONLY",
+        },
+      ],
+    });
   }
+
   next();
 };
