@@ -96,7 +96,10 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "ORDER_NOT_FOUND" });
     }
 
-    if (order.status === "success" && status === "pending") {
+    if (
+      (order.status === "success" || order.status === "failed") &&
+      status === "pending"
+    ) {
       return res.status(400).json({
         success: false,
         errors: [
@@ -106,7 +109,6 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
         ],
       });
     }
-
     const result = await orderCol.updateOne({ orderId }, { $set: { status } });
 
     if (result.modifiedCount === 0) {
