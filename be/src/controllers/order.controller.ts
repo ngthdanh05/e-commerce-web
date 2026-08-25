@@ -48,6 +48,7 @@ export const getOrderForAdmin = async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / limit);
 
     res.json({
+      success: true,
       orders: formatted,
       pagination: {
         currentPage: page,
@@ -69,9 +70,23 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
     const { id: orderId } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ["pending", "success", "failed"];
+    const validStatuses = [
+      "pending",
+      "processing",
+      "shipping",
+      "success",
+      "failed",
+      "cancelled",
+    ];
     if (!validStatuses.includes(status)) {
-      return res.status(400).json({ error: "INVALID_STATUS" });
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "INVALID_STATUS",
+          },
+        ],
+      });
     }
 
     const orderCol = await orderCollection.getCollection();
@@ -81,6 +96,19 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
       return res.status(404).json({ error: "ORDER_NOT_FOUND" });
     }
 
+    if (
+      (order.status === "success" || order.status === "failed") &&
+      status === "pending"
+    ) {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "ILLEGAL_STATUS_TRANSITION",
+          },
+        ],
+      });
+    }
     const result = await orderCol.updateOne({ orderId }, { $set: { status } });
 
     if (result.modifiedCount === 0) {
@@ -252,7 +280,25 @@ export const deleteOrder = async (req: AuthRequest, res: Response) => {
     }
 
     if (order.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "FORBIDDEN" });
+      return res.status(403).json({
+        success: false,
+        errors: [
+          {
+            message: "FORBIDDEN",
+          },
+        ],
+      });
+    }
+
+    if (order.status != "pending") {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "CANNOT_DELETE_ACTIVE_ORDER",
+          },
+        ],
+      });
     }
 
     await orderCol.deleteOne({ orderId });
