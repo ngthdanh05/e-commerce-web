@@ -125,25 +125,25 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    N1([Node 1: Start Cart Request /api/cart]) --> D1{D1: Verify Token & Get userId?}
+    N1([Node 1: Start Cart Request /api/cart]) --> D1{"D1: Verify Token & Get userId?"}
     D1 -- "[False] Missing/Invalid" --> N2["Node 2: Return 401 UNAUTHORIZED"]
-    D1 -- "[True] Valid User" --> D2{D2: Operation Type?}
+    D1 -- "[True] Valid User" --> D2{"D2: Operation Type?"}
 
     %% GET CART
     D2 -- "GET /" --> N3[Node 3: cartCol.findOne userId]
-    N3 --> D3{D3: Cart exists in DB?}
+    N3 --> D3{"D3: Cart exists in DB?"}
     D3 -- "[False] Null" --> N4["Node 4: Return 200 Empty Cart (products: [], totalPrice: 0)"]
     D3 -- "[True] Exists" --> N5["Node 5: Return 200 Cart Data<br/>📌 TC_CART_01"]
 
     %% ADD TO CART
     D2 -- "POST /add" --> N6[Node 6: Extract productId, quantity]
-    N6 --> D4{D4: !productId || !quantity || quantity <= 0 || quantity > 99 || float?}
+    N6 --> D4{"D4: !productId || !quantity || quantity <= 0 || quantity > 99 || float?"}
     D4 -- "[True] Invalid Input" --> N7["Node 7: Return 400 Bad Request Quantity/Product<br/>📌 <b>Path C2</b> | TC_CART_02, TC_CART_05, TC_CART_06"]
     D4 -- "[False] Valid BVA" --> N8[Node 8: Query productCol.findOne productId in DB]
-    N8 --> D5{D5: Product found in DB?}
+    N8 --> D5{"D5: Product found in DB?"}
     D5 -- "[False] Not Found" --> N9["Node 9: Return 404 Product not found<br/>📌 TC_CART_07"]
     D5 -- "[True] Found" --> N10[Node 10: Fetch real price from DB Product.price]
-    N10 --> D6{D6: User already has cart document?}
+    N10 --> D6{"D6: User already has cart document?"}
     D6 -- "[False] No Cart" --> N11[Node 11: Create new cart doc with calculated totalPrice]
     D6 -- "[True] Has Cart" --> N12[Node 12: Add item or update quantity in array & recalculate totalPrice]
     N11 --> N13[Node 13: Save to MongoDB cartCol]
@@ -152,7 +152,7 @@ flowchart TD
 
     %% UPDATE / DELETE CART
     D2 -- "PUT /update" --> N15[Node 15: Find item index in cart.products]
-    N15 --> D7{D7: quantity <= 0?}
+    N15 --> D7{"D7: quantity <= 0?"}
     D7 -- "[True] Remove" --> N16[Node 16: Splice/Delete item from array]
     D7 -- "[False] Update" --> N17[Node 17: Update item quantity]
     N16 --> N18[Node 18: Recalculate totalPrice & update DB]
@@ -177,19 +177,19 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    N1([Node 1: Start Checkout /api/checkout]) --> D1{D1: User Authenticated?}
+    N1([Node 1: Start Checkout /api/checkout]) --> D1{"D1: User Authenticated?"}
     D1 -- "[False] No Token" --> N2["Node 2: Return 401 UNAUTHORIZED"]
     D1 -- "[True] Valid User" --> N3[Node 3: Find cart in cartCol by userId]
 
-    N3 --> D2{D2: !cart || cart.products.length == 0 || totalPrice == 0?}
+    N3 --> D2{"D2: !cart || cart.products.length == 0 || totalPrice == 0?"}
     D2 -- "[True] Empty Cart" --> N4["Node 4: Return 400/404 EMPTY_CART_CHECKOUT_NOT_ALLOWED<br/>📌 <b>Path CK3</b> | TC_CHK_03"]
     D2 -- "[False] Cart Has Items" --> N5[Node 5: Validate shippingInfo: phone, address, fullName]
 
-    N5 --> D3{D3: Phone != 10 digits || address < 10 chars || invalid format?}
+    N5 --> D3{"D3: Phone != 10 digits || address < 10 chars || invalid format?"}
     D3 -- "[True] Invalid BVA" --> N6["Node 6: Return 400 Invalid Shipping Info<br/>📌 TC_CHK_04, TC_CHK_05, TC_CHK_06"]
     D3 -- "[False] Valid Shipping" --> N7[Node 7: Generate OrderID PAY... & Prepare Order Data]
 
-    N7 --> D4{D4: Check paymentMethod typePayment?}
+    N7 --> D4{"D4: Check paymentMethod typePayment?"}
 
     %% COD PATH
     D4 -- "typePayment == 'cod'" --> N8[Node 8: Insert checkoutCol & orderCol status=pending]
@@ -207,9 +207,9 @@ flowchart TD
     %% VNPAY CALLBACK SUB-GRAPH
     N15([Node 15: VNPay Gateway Callback /vnpay-callback]) --> N16[Node 16: Extract vnp_SecureHash & Query Params]
     N16 --> N17[Node 17: Recalculate HMAC-SHA512 Checksum]
-    N17 --> D5{D5: Hash matches vnp_SecureHash?}
+    N17 --> D5{"D5: Hash matches vnp_SecureHash?"}
     D5 -- "[False] Tampered" --> N18["Node 18: Return 400 INVALID_CHECKSUM (Reject Fraud)<br/>📌 <b>Path CK4</b> | TC_CHK_08"]
-    D5 -- "[True] Verified" --> D6{D6: vnp_ResponseCode == '00'?}
+    D5 -- "[True] Verified" --> D6{"D6: vnp_ResponseCode == '00'?"}
     D6 -- "[False] Cancel/Fail" --> N19["Node 19: Update status=failed & Redirect /checkout-failure"]
     D6 -- "[True] Paid" --> N20[Node 20: Update checkoutCol status=success, set paidAt]
     N20 --> N21[Node 21: Clear User Cart in DB]
@@ -232,7 +232,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    N1([Node 1: Start Order Request /api/orders]) --> D1{D1: User Role & Action?}
+    N1([Node 1: Start Order Request /api/orders]) --> D1{"D1: User Role & Action?"}
 
     %% USER GET ORDERS
     D1 -- "GET / (User Orders)" --> N2[Node 2: Filter orders by userId & optional status]
@@ -240,29 +240,29 @@ flowchart TD
 
     %% USER DELETE ORDER
     D1 -- "DELETE /:id (User Cancel)" --> N4[Node 4: Find order in DB by orderId]
-    N4 --> D2{D2: Order exists?}
+    N4 --> D2{"D2: Order exists?"}
     D2 -- "[False] Not Found" --> N5["Node 5: Return 404 ORDER_NOT_FOUND"]
-    D2 -- "[True] Exists" --> D3{D3: order.userId == req.user._id?}
+    D2 -- "[True] Exists" --> D3{"D3: order.userId == req.user._id?"}
     D3 -- "[False] Other User" --> N6["Node 6: Return 403 FORBIDDEN (Ownership Guard)<br/>📌 <b>Path O1 vs Forbidden</b> | TC_ORD_03"]
-    D3 -- "[True] Owner" --> D4{D4: order.status == 'pending'?}
+    D3 -- "[True] Owner" --> D4{"D4: order.status == 'pending'?"}
     D4 -- "[False] Active (shipping/success)" --> N7["Node 7: Return 400 CANNOT_DELETE_ACTIVE_ORDER<br/>📌 <b>Path O2</b> | TC_ORD_04"]
     D4 -- "[True] Pending" --> N8[Node 8: Delete order document from orderCol]
     N8 --> N9["Node 9: Return 200 Order deleted successfully<br/>📌 <b>Path O1</b> | TC_ORD_04"]
 
     %% ADMIN OPERATIONS
-    D1 -- "Admin Endpoint /api/orders/admin/*" --> D5{D5: req.user.role == 'admin'?}
+    D1 -- "Admin Endpoint /api/orders/admin/*" --> D5{"D5: req.user.role == 'admin'?"}
     D5 -- "[False] Normal User" --> N10["Node 10: Return 403 FORBIDDEN_ADMIN_ONLY<br/>📌 TC_ORD_05"]
-    D5 -- "[True] Admin" --> D6{D6: Admin Action?}
+    D5 -- "[True] Admin" --> D6{"D6: Admin Action?"}
 
     %% ADMIN GET
     D6 -- "GET /admin" --> N11["Node 11: Return 200 Paginated All Orders with User Info"]
 
     %% ADMIN UPDATE STATUS (STATE MACHINE)
     D6 -- "PUT /admin/:id" --> N12[Node 12: Extract new status from req.body]
-    N12 --> D7{D7: status in validEnum (pending, processing, shipping, success, failed, cancelled)?}
+    N12 --> D7{"D7: status in validEnum (pending, processing, shipping, success, failed, cancelled)?"}
     D7 -- "[False] Invalid Enum" --> N13["Node 13: Return 400 INVALID_STATUS"]
     D7 -- "[True] Valid Enum" --> N14[Node 14: Check State Transition Rules]
-    N14 --> D8{D8: Illegal Transition (e.g. success/failed -> pending)?}
+    N14 --> D8{"D8: Illegal Transition (e.g. success/failed -> pending)?"}
     D8 -- "[True] Illegal Loop" --> N15["Node 15: Return 400 ILLEGAL_STATUS_TRANSITION<br/>📌 <b>Path O4</b> | TC_ORD_07"]
     D8 -- "[False] Legal Transition" --> N16[Node 16: Update status in orderCol & checkoutCol]
     N16 --> N17["Node 17: Return 200 Order status updated successfully<br/>📌 <b>Path O3</b> | TC_ORD_06"]
@@ -283,7 +283,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    N1([Node 1: Start Product Request /api/products]) --> D1{D1: Request Endpoint?}
+    N1([Node 1: Start Product Request /api/products]) --> D1{"D1: Request Endpoint?"}
 
     %% GET ALL PRODUCTS (PAGINATION)
     D1 -- "GET /" --> N2[Node 2: Extract query params page, limit]
@@ -293,30 +293,30 @@ flowchart TD
 
     %% GET PRODUCT BY ID
     D1 -- "GET /:id" --> N6[Node 6: Check ObjectId.isValid id]
-    N6 --> D2{D2: Is valid 24-hex ObjectId?}
+    N6 --> D2{"D2: Is valid 24-hex ObjectId?"}
     D2 -- "[False] Invalid Format" --> N7["Node 7: Return 400 Invalid Product ID<br/>📌 TC_PROD_03"]
     D2 -- "[True] Valid Format" --> N8[Node 8: Find product by _id in DB]
-    N8 --> D3{D3: Product exists?}
+    N8 --> D3{"D3: Product exists?"}
     D3 -- "[False] Not Found" --> N9["Node 9: Return 404 Product not found"]
     D3 -- "[True] Exists" --> N10["Node 10: Return 200 Product Details"]
 
     %% CREATE PRODUCT
-    D1 -- "POST /create" --> D4{D4: User Logged In & Admin?}
+    D1 -- "POST /create" --> D4{"D4: User Logged In & Admin?"}
     D4 -- "[False] Unauthorized" --> N11["Node 11: Return 401 Please login to continue"]
     D4 -- "[True] Authorized" --> N12[Node 12: Validate name, price, description, category, imageUrl]
-    N12 --> D5{D5: Missing fields || price < 1000 || price > 1,000,000,000 || float?}
+    N12 --> D5{"D5: Missing fields || price < 1000 || price > 1,000,000,000 || float?"}
     D5 -- "[True] Invalid BVA" --> N13["Node 13: Return 400 Data are required / Invalid Price<br/>📌 <b>Path P3</b> | TC_PROD_05, TC_PROD_06"]
     D5 -- "[False] Valid Input" --> N14[Node 14: Sanitize category slug & create new product doc]
     N14 --> N15[Node 15: Insert into productCol]
     N15 --> N16["Node 16: Return 201 Product Created Successfully<br/>📌 <b>Path P2</b> | TC_PROD_04"]
 
     %% DELETE PRODUCT
-    D1 -- "DELETE /delete/:id" --> D6{D6: Valid ObjectId?}
+    D1 -- "DELETE /delete/:id" --> D6{"D6: Valid ObjectId?"}
     D6 -- "[False] Invalid" --> N17["Node 17: Return 400 Product ID is required"]
     D6 -- "[True] Valid" --> N18[Node 18: Find product in DB]
-    N18 --> D7{D7: Product exists?}
+    N18 --> D7{"D7: Product exists?"}
     D7 -- "[False] Not Found" --> N19["Node 19: Return 404 PRODUCT_NOT_FOUND"]
-    D7 -- "[True] Found" --> D8{D8: product.public_id exists?}
+    D7 -- "[True] Found" --> D8{"D8: product.public_id exists?"}
     D8 -- "[True] Has Image" --> N20[Node 20: Cloudinary.uploader.destroy public_id]
     D8 -- "[False] No Image" --> N21[Node 21: Skip Cloudinary cleanup]
     N20 --> N22[Node 22: Delete document from productCol]
