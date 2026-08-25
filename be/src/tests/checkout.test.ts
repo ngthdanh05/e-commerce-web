@@ -8,12 +8,16 @@ import { orderCollection } from "../models/order.model";
 // ============================================================================
 // MOCKING MODULES & DATABASE
 // ============================================================================
-jest.mock("jsonwebtoken", () => ({
-  verify: jest.fn().mockReturnValue({
-    _id: "507f1f77bcf86cd799439011",
-    email: "user@example.com",
-    role: "user",
-  }),
+jest.mock("../middleware/auth", () => ({
+  verifyToken: (req: any, res: any, next: any) => {
+    req.user = {
+      _id: "507f1f77bcf86cd799439011",
+      email: "user@example.com",
+      role: "user",
+    };
+
+    next();
+  },
 }));
 
 jest.mock("../models/checkout.model", () => ({

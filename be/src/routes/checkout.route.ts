@@ -4,6 +4,8 @@ import { verifyToken } from "middleware/auth";
 
 const router = express.Router();
 
+router.post("/", verifyToken, createCheckout);
+
 router.post("/create", verifyToken, createCheckout);
 
 router.get("/vnpay-callback", vnpayCallback);

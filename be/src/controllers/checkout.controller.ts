@@ -4,8 +4,8 @@ import { cartCollection } from "models/cart.model";
 import { checkoutCollection } from "models/checkout.model";
 import { orderCollection } from "models/order.model";
 import { VNPay, ignoreLogger, ProductCode, VnpLocale, dateFormat } from "vnpay";
-// import querystring from "qs";
-// import crypto from "crypto";
+import { checkoutSchema } from "schemas/checkout.schema";
+import crypto from "crypto";
 
 function generatePayID() {
   const now = new Date();
@@ -16,7 +16,19 @@ function generatePayID() {
 }
 export const createCheckout = async (req: AuthRequest, res: Response) => {
   try {
-    const { typePayment, shippingInfo } = req.body;
+    const validation = checkoutSchema.safeParse(req.body);
+
+    if (!validation.success) {
+      return res.status(400).json({
+        success: false,
+        errors: validation.error.issues.map((issue) => ({
+          field: issue.path.join("."),
+          message: issue.message,
+        })),
+      });
+    }
+
+    const { typePayment, shippingInfo } = validation.data;
     const userId = req.user?._id;
 
     const checkoutCol = await checkoutCollection.getCollection();
@@ -24,9 +36,35 @@ export const createCheckout = async (req: AuthRequest, res: Response) => {
     const orderCol = await orderCollection.getCollection();
 
     const cart = await cartCol.findOne({ userId });
-    if (!cart) return res.status(404).json({ error: "Giỏ hàng không tồn tại" });
+
+    if (!cart) {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "EMPTY_CART_CHECKOUT_NOT_ALLOWED",
+          },
+        ],
+      });
+    }
 
     const totalPrice = Number(cart.totalPrice) || 0;
+
+    if (
+      !Array.isArray(cart.products) ||
+      cart.products.length === 0 ||
+      totalPrice === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "EMPTY_CART_CHECKOUT_NOT_ALLOWED",
+          },
+        ],
+      });
+    }
+
     const finalPrice = Number(cart.finalPrice) || totalPrice;
     const orderId = generatePayID();
 
@@ -50,6 +88,7 @@ export const createCheckout = async (req: AuthRequest, res: Response) => {
       await cartCol.updateOne({ userId }, { $set: emptyCart() });
 
       return res.status(200).json({
+        success: true,
         message: "Đơn COD đã tạo thành công",
         orderId,
         metadata: { order: orderData },
@@ -71,9 +110,9 @@ export const createCheckout = async (req: AuthRequest, res: Response) => {
       );
 
       const vnpay = new VNPay({
-        tmnCode: "E5GKRD4W",
-        secureSecret: "DXGVPNRODG7MNLJ3JNH1BWYVX7SKDCRZ",
-        vnpayHost: "https://sandbox.vnpayment.vn",
+        tmnCode: process.env.VNPAY_TMN_CODE!,
+        secureSecret: process.env.VNPAY_SECURE_SECRET!,
+        vnpayHost: process.env.VNPAY_HOST!,
         testMode: true,
         loggerFn: ignoreLogger,
       });
@@ -91,6 +130,7 @@ export const createCheckout = async (req: AuthRequest, res: Response) => {
       });
 
       return res.status(200).json({
+        success: true,
         message: "Tạo đơn hàng VNPAY thành công",
         paymentUrl,
         orderId,
@@ -120,22 +160,59 @@ export const vnpayCallback = async (req: Request, res: Response) => {
   try {
     const query = req.query;
 
-    // const secureHash = query["vnp_SecureHash"];
-    // const tmnSecret = "DXGVPNRODG7MNLJ3JNH1BWYVX7SKDCRZ";
+      const secureHash = query["vnp_SecureHash"] as string;
 
-    // let cloned = { ...query };
-    // delete cloned["vnp_SecureHash"];
-    // delete cloned["vnp_SecureHashType"];
+      const tmnSecret =
+        process.env.VNPAY_SECURE_SECRET ||
+        process.env.VNP_HASHSECRET;
 
-    // const sorted = querystring.stringify(cloned, { encode: false });
-    // const signData = crypto
-    //   .createHmac("sha512", tmnSecret)
-    //   .update(sorted)
-    //   .digest("hex");
+      if (!tmnSecret) {
+        return res.status(500).json({
+          success: false,
+          errors: [
+            {
+              message: "VNPAY_SECRET_NOT_CONFIGURED",
+            },
+          ],
+        });
+      }
 
-    // if (secureHash !== signData) {
-    //   return res.status(400).json({ error: "Chữ ký không hợp lệ" });
-    // }
+    const cloned: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(query)) {
+      if (key === "vnp_SecureHash" || key === "vnp_SecureHashType") {
+        continue;
+      }
+
+      if (typeof value === "string") {
+        cloned[key] = value;
+      }
+    }
+
+    const sortedKeys = Object.keys(cloned).sort();
+
+    const sorted = sortedKeys
+      .map((key) => `${key}=${cloned[key]}`)
+      .join("&");
+
+    const signData = crypto
+      .createHmac("sha512", tmnSecret)
+      .update(Buffer.from(sorted, "utf-8"))
+      .digest("hex");
+
+    if (
+      !secureHash ||
+      secureHash.toLowerCase() !== signData.toLowerCase()
+    ) {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "INVALID_CHECKSUM",
+          },
+        ],
+      });
+    }
 
     const vnp_ResponseCode = query["vnp_ResponseCode"];
     const orderInfo = query["vnp_OrderInfo"] as string;
