@@ -263,6 +263,17 @@ export const deleteOrder = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    if (order.status != "pending") {
+      return res.status(400).json({
+        success: false,
+        errors: [
+          {
+            message: "CANNOT_DELETE_ACTIVE_ORDER",
+          },
+        ],
+      });
+    }
+
     await orderCol.deleteOne({ orderId });
 
     return res.json({ success: true, message: "Order deleted successfully" });
