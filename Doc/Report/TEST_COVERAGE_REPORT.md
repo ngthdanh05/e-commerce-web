@@ -287,7 +287,7 @@ flowchart TD
 
     %% GET ALL PRODUCTS (PAGINATION)
     D1 -- "GET /" --> N2[Node 2: Extract query params page, limit]
-    N2 --> N3[Node 3: Apply Pagination Fallback & Clamp Guards<br/>page = max(page, 1)<br/>limit = min(max(limit, 1), 100)]
+    N2 --> N3["Node 3: Apply Pagination Fallback & Clamp Guards<br/>page = max(page, 1)<br/>limit = min(max(limit, 1), 100)"]
     N3 --> N4[Node 4: Query productCol.find with skip & limit]
     N4 --> N5["Node 5: Return 200 Formatted Products & Pagination Meta<br/>📌 <b>Path P1</b> | TC_PROD_01, TC_PROD_02"]
 
