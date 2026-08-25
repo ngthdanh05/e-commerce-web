@@ -253,7 +253,14 @@ export const deleteOrder = async (req: AuthRequest, res: Response) => {
     }
 
     if (order.userId.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "FORBIDDEN" });
+      return res.status(403).json({
+        success: false,
+        errors: [
+          {
+            message: "FORBIDDEN",
+          },
+        ],
+      });
     }
 
     await orderCol.deleteOne({ orderId });
