@@ -48,6 +48,7 @@ export const getOrderForAdmin = async (req: Request, res: Response) => {
     const totalPages = Math.ceil(total / limit);
 
     res.json({
+      success: true,
       orders: formatted,
       pagination: {
         currentPage: page,
