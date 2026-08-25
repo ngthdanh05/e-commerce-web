@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
 import { AuthRequest } from "middleware/auth";
 import { ObjectId } from "mongodb";
+import { error } from "console";
 dotenv.config();
 
 export const registerUser = async (req: Request, res: Response) => {
@@ -18,7 +19,8 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const exists = await col.findOne({ email });
 
-    if (exists) return res.status(400).json("ACCOUNT_ALREADY_EXISTS");
+    if (exists)
+      return res.status(400).json({ error: "ACCOUNT_ALREADY_EXISTS" });
 
     const password_hash = await bcrypt.hash(password, 10);
 

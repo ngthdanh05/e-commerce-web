@@ -14,7 +14,7 @@ export const registerSchema = z.object({
     .min(1, "EMAIL_REQUIRED")
     .min(5, "Email must be at least 5 characters")
     .max(254, "EMAIL_TOO_LONG")
-    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/, "Invalid email format"),
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, "Invalid email format"),
 
   password: z
     .string()
