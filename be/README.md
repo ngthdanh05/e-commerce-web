@@ -5,3 +5,7 @@
 - npm install
 
 - npm run code
+
+# Run test coverage
+
+- npm run test:coverage
