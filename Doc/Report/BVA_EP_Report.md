@@ -59,14 +59,16 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 
 ### 2.2. Auth - Login và User
 
+### 2.2. Auth - Login và User
+
 | Field / Attribute | Kỹ thuật áp dụng | Vùng tương đương / Biên                            | Input Test Value                               | Expected Outcome                    | Status trong Codebase (Đã handle / Chưa handle)                                                |
-| ----------------- | ---------------- | -------------------------------------------------- | ---------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------- | --- | ----------------------------------- |
+| :---------------- | :--------------- | :------------------------------------------------- | :--------------------------------------------- | :---------------------------------- | :--------------------------------------------------------------------------------------------- |
 | login.email       | EP               | Empty/missing / invalid / valid                    | `""`, thiếu / `abc` / `user@example.com`       | 400 / 400 / tiếp tục xác thực       | Đã handle `.min(1)` + regex                                                                    |
 | login.password    | EP               | Empty/missing / non-empty                          | `""`, thiếu / `x`                              | 400 / xác thực bcrypt               | Đã handle `.min(1)`; chưa có max length/complexity                                             |
 | login credentials | EP               | User không tồn tại / sai password / blocked / đúng | các bản ghi tương ứng                          | 404 / 401 / 403 / 200               | Đã handle trong controller và đã có test một phần                                              |
 | toggle block      | EP               | Boolean valid / wrong type / missing               | true, false / `"true"`, 1 / thiếu              | 200 / 400 / 400                     | Đã handle Zod `z.boolean()`; ID route chưa được schema hóa                                     |
 | user/:id          | EP               | ObjectId hợp lệ / malformed / không tồn tại        | 24 hex / `abc` / ID hợp lệ nhưng không có user | 200/404 hoặc 400 / 400 / 404        | Chưa handle đầy đủ: controller gọi `new ObjectId(id)` trực tiếp, có thể rơi vào 500 với ID sai |
-| pagination users  | BVA/EP           | page, limit <1 / nominal / rất lớn / non-numeric   | `0`, `1`, `10`, `999999`, `abc`                | Nên reject hoặc clamp theo contract | Chưa handle bằng schema; `parseInt(...)                                                        |     | default` nhận số âm và không có max |
+| pagination users  | BVA/EP           | page, limit <1 / nominal / rất lớn / non-numeric   | `0`, `1`, `10`, `999999`, `abc`                | Nên reject hoặc clamp theo contract | Chưa handle bằng schema; `parseInt(...) default` nhận số âm và không có max                    |
 
 ### 2.3. Cart
 
