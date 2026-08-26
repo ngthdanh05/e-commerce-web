@@ -78,20 +78,23 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
       "failed",
       "cancelled",
     ];
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        errors: [
-          {
-            message: "INVALID_STATUS",
-          },
-        ],
+        errors: [{ message: "INVALID_STATUS" }],
       });
     }
 
     const orderCol = await orderCollection.getCollection();
 
-    const order = await orderCol.findOne({ orderId });
+    // Tự động kiểm tra: Nếu id truyền vào là ObjectId 24 ký tự thì query theo _id, ngược lại query theo orderId
+    const query =
+      ObjectId.isValid(orderId) && orderId.length === 24
+        ? { _id: new ObjectId(orderId) }
+        : { orderId: orderId };
+
+    const order = await orderCol.findOne(query);
     if (!order) {
       return res.status(404).json({ error: "ORDER_NOT_FOUND" });
     }
@@ -102,14 +105,12 @@ export const updateOrderForAdmin = async (req: Request, res: Response) => {
     ) {
       return res.status(400).json({
         success: false,
-        errors: [
-          {
-            message: "ILLEGAL_STATUS_TRANSITION",
-          },
-        ],
+        errors: [{ message: "ILLEGAL_STATUS_TRANSITION" }],
       });
     }
-    const result = await orderCol.updateOne({ orderId }, { $set: { status } });
+
+    // Cập nhật trạng thái theo đúng query đã tìm thấy
+    const result = await orderCol.updateOne(query, { $set: { status } });
 
     if (result.modifiedCount === 0) {
       return res.status(400).json({ error: "ORDER_NOT_UPDATED" });
@@ -272,36 +273,34 @@ export const deleteOrder = async (req: AuthRequest, res: Response) => {
 
     const { id: orderId } = req.params;
 
+    if (!ObjectId.isValid(orderId)) {
+      return res.status(400).json({ error: "INVALID_ORDER_ID" });
+    }
+
     const orderCol = await orderCollection.getCollection();
 
-    const order = await orderCol.findOne({ orderId });
+    const order = await orderCol.findOne({ _id: new ObjectId(orderId) });
+
     if (!order) {
       return res.status(404).json({ error: "ORDER_NOT_FOUND" });
     }
 
+    // Check quyền sở hữu order -> Trả về 403 Forbidden
     if (order.userId.toString() !== userId.toString()) {
       return res.status(403).json({
         success: false,
-        errors: [
-          {
-            message: "FORBIDDEN",
-          },
-        ],
+        errors: [{ message: "FORBIDDEN" }],
       });
     }
 
-    if (order.status != "pending") {
+    if (order.status !== "pending") {
       return res.status(400).json({
         success: false,
-        errors: [
-          {
-            message: "CANNOT_DELETE_ACTIVE_ORDER",
-          },
-        ],
+        errors: [{ message: "CANNOT_DELETE_ACTIVE_ORDER" }],
       });
     }
 
-    await orderCol.deleteOne({ orderId });
+    await orderCol.deleteOne({ _id: new ObjectId(orderId) });
 
     return res.json({ success: true, message: "Order deleted successfully" });
   } catch (error) {

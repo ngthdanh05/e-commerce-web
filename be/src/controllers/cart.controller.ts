@@ -190,7 +190,7 @@ export const deleteCart = async (req: AuthRequest, res: Response) => {
     if (!cart) return res.status(404).json({ message: "Cart not found" });
 
     const index = cart.products.findIndex(
-      (p: any) => p.productId === productId,
+      (p: any) => p.productId.toString() === productId.toString(),
     );
     if (index < 0)
       return res.status(404).json({ message: "Product not found in cart" });
