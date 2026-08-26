@@ -59,8 +59,6 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 
 ### 2.2. Auth - Login và User
 
-### 2.2. Auth - Login và User
-
 | Field / Attribute | Kỹ thuật áp dụng | Vùng tương đương / Biên                            | Input Test Value                               | Expected Outcome                    | Status trong Codebase (Đã handle / Chưa handle)                                                |
 | :---------------- | :--------------- | :------------------------------------------------- | :--------------------------------------------- | :---------------------------------- | :--------------------------------------------------------------------------------------------- |
 | login.email       | EP               | Empty/missing / invalid / valid                    | `""`, thiếu / `abc` / `user@example.com`       | 400 / 400 / tiếp tục xác thực       | Đã handle `.min(1)` + regex                                                                    |
