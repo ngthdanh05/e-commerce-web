@@ -228,7 +228,7 @@ Hiện tại, file [`auth.test.ts`](file:///d:/admin/e-commerce-web/be/src/tests
 
 ---
 
-## 🟢 PHẦN 4: ĐÁNH GIÁ ĐỘ PHÙ HỢP CỦA PHƯƠNG PHÁP (METHODOLOGY EVALUATION)
+## 🟢 PHẦN 3: ĐÁNH GIÁ ĐỘ PHÙ HỢP CỦA PHƯƠNG PHÁP (METHODOLOGY EVALUATION)
 
 ### 1. Đánh giá điểm mạnh của phương pháp Blackbox (EP / BVA) đối với Module Auth
 
