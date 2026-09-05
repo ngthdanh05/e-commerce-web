@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { checkoutCollection } from "../models/checkout.model";
 import { cartCollection } from "../models/cart.model";
 import { orderCollection } from "../models/order.model";
+import { checkoutSchema } from "schemas/checkout.schema";
+import { createCheckout } from "controllers/checkout.controller";
 
 // ============================================================================
 // MOCKING MODULES & DATABASE
@@ -411,4 +413,410 @@ describe("SCRUM - 26: Checkout Shipping Validation, Empty Cart Guard & VNPay Sec
       );
     });
   });
+    describe("ADDITIONAL COVERAGE TESTS", () => {
+    it("TC_CHECKOUT_EXTRA_13: Thiếu VNPay Secret -> 500 VNPAY_SECRET_NOT_CONFIGURED", async () => {
+      const oldSecureSecret = process.env.VNPAY_SECURE_SECRET;
+      const oldHashSecret = process.env.VNP_HASHSECRET;
+
+      delete process.env.VNPAY_SECURE_SECRET;
+      delete process.env.VNP_HASHSECRET;
+
+      const response = await request(app).get(
+        "/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId%3DPAY123456&vnp_SecureHash=abc",
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        success: false,
+        errors: [{ message: "VNPAY_SECRET_NOT_CONFIGURED" }],
+      });
+
+      if (oldSecureSecret !== undefined) {
+        process.env.VNPAY_SECURE_SECRET = oldSecureSecret;
+      }
+
+      if (oldHashSecret !== undefined) {
+        process.env.VNP_HASHSECRET = oldHashSecret;
+      }
+    });
+
+    it("TC_CHECKOUT_EXTRA_14: Hash hợp lệ nhưng order không tồn tại -> 404", async () => {
+      const orderId = "PAY_NOT_FOUND";
+      const tmnSecret =
+        process.env.VNPAY_SECURE_SECRET ||
+        process.env.VNP_HASHSECRET ||
+        "TEST_SECRET";
+
+      process.env.VNP_HASHSECRET = tmnSecret;
+
+      mockCheckoutCollection.findOne.mockResolvedValue(null);
+
+      const queryParams: Record<string, string> = {
+        vnp_OrderInfo: `orderId=${orderId}`,
+        vnp_ResponseCode: "00",
+        vnp_TxnRef: orderId,
+      };
+
+      const signData = Object.keys(queryParams)
+        .sort()
+        .map((key) => `${key}=${queryParams[key]}`)
+        .join("&");
+
+      const validHash = crypto
+        .createHmac("sha512", tmnSecret)
+        .update(Buffer.from(signData, "utf-8"))
+        .digest("hex");
+
+      const queryString = new URLSearchParams({
+        ...queryParams,
+        vnp_SecureHash: validHash,
+      }).toString();
+
+      const response = await request(app).get(
+        `/api/checkout/vnpay-callback?${queryString}`,
+      );
+
+      expect(response.status).toBe(404);
+    });
+
+    it("TC_CHECKOUT_EXTRA_15: VNPay trả mã thất bại -> status failed và redirect failure", async () => {
+      const orderId = "PAY_FAILED";
+      const tmnSecret =
+        process.env.VNPAY_SECURE_SECRET ||
+        process.env.VNP_HASHSECRET ||
+        "TEST_SECRET";
+
+      process.env.VNP_HASHSECRET = tmnSecret;
+
+      mockCheckoutCollection.findOne.mockResolvedValue({
+        orderId,
+        userId: "507f1f77bcf86cd799439011",
+        finalPrice: 400000,
+        status: "pending",
+      });
+
+      const queryParams: Record<string, string> = {
+        vnp_OrderInfo: `orderId=${orderId}`,
+        vnp_ResponseCode: "01",
+        vnp_TxnRef: orderId,
+      };
+
+      const signData = Object.keys(queryParams)
+        .sort()
+        .map((key) => `${key}=${queryParams[key]}`)
+        .join("&");
+
+      const validHash = crypto
+        .createHmac("sha512", tmnSecret)
+        .update(Buffer.from(signData, "utf-8"))
+        .digest("hex");
+
+      const queryString = new URLSearchParams({
+        ...queryParams,
+        vnp_SecureHash: validHash,
+      }).toString();
+
+      const response = await request(app).get(
+        `/api/checkout/vnpay-callback?${queryString}`,
+      );
+
+      expect(response.status).toBe(302);
+
+      expect(mockCheckoutCollection.updateOne).toHaveBeenCalledWith(
+        { orderId },
+        { $set: { status: "failed" } },
+      );
+
+      expect(response.headers.location).toContain(
+        `/checkout-failure?orderId=${orderId}`,
+      );
+    });
+
+    it("TC_CHECKOUT_EXTRA_16: createCheckout gặp lỗi DB -> 500 INTERNAL_SERVER_ERROR", async () => {
+      const consoleSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      (checkoutCollection.getCollection as jest.Mock).mockRejectedValueOnce(
+        new Error("Mock DB error"),
+      );
+
+      const response = await request(app)
+        .post("/api/checkout")
+        .set("Authorization", validAuthHeader)
+        .send({
+          typePayment: "cod",
+          shippingInfo: validShippingInfo,
+        });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: "INTERNAL_SERVER_ERROR",
+      });
+
+      consoleSpy.mockRestore();
+    });
+
+    it("TC_CHECKOUT_EXTRA_17: VNPay callback gặp lỗi DB -> 500 INTERNAL_SERVER_ERROR", async () => {
+      const orderId = "PAY_CALLBACK_ERROR";
+
+      const tmnSecret =
+        process.env.VNPAY_SECURE_SECRET ||
+        process.env.VNP_HASHSECRET ||
+        "TEST_SECRET";
+
+      process.env.VNP_HASHSECRET = tmnSecret;
+
+      const queryParams: Record<string, string> = {
+        vnp_OrderInfo: `orderId=${orderId}`,
+        vnp_ResponseCode: "00",
+        vnp_TxnRef: orderId,
+      };
+
+      const signData = Object.keys(queryParams)
+        .sort()
+        .map((key) => `${key}=${queryParams[key]}`)
+        .join("&");
+
+      const validHash = crypto
+        .createHmac("sha512", tmnSecret)
+        .update(Buffer.from(signData, "utf-8"))
+        .digest("hex");
+
+      const queryString = new URLSearchParams({
+        ...queryParams,
+        vnp_SecureHash: validHash,
+      }).toString();
+
+      const consoleSpy = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {});
+
+      (checkoutCollection.getCollection as jest.Mock).mockRejectedValueOnce(
+        new Error("Mock callback DB error"),
+      );
+
+      const response = await request(app).get(
+        `/api/checkout/vnpay-callback?${queryString}`,
+      );
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        error: "INTERNAL_SERVER_ERROR",
+      });
+
+      consoleSpy.mockRestore();
+    });
+        it("TC_CHECKOUT_EXTRA_18: Query param dạng array -> bỏ qua value không phải string", async () => {
+      const tmnSecret =
+        process.env.VNPAY_SECURE_SECRET ||
+        process.env.VNP_HASHSECRET ||
+        "TEST_SECRET";
+
+      process.env.VNP_HASHSECRET = tmnSecret;
+
+      const response = await request(app).get(
+        "/api/checkout/vnpay-callback" +
+          "?vnp_ResponseCode=00" +
+          "&vnp_OrderInfo=orderId%3DPAY_ARRAY" +
+          "&testArray=value1" +
+          "&testArray=value2" +
+          "&vnp_SecureHash=INVALID_HASH"
+      );
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        success: false,
+        errors: [
+          {
+            message: "INVALID_CHECKSUM",
+          },
+        ],
+      });
+    });
+        it("TC_CHECKOUT_EXTRA_19: products không phải Array -> Reject EMPTY_CART", async () => {
+      mockCartCollection.findOne.mockResolvedValue({
+        userId: "507f1f77bcf86cd799439011",
+        products: null,
+        totalPrice: 400000,
+        finalPrice: 400000,
+      });
+
+      const response = await request(app)
+        .post("/api/checkout")
+        .set("Authorization", validAuthHeader)
+        .send({
+          typePayment: "cod",
+          shippingInfo: validShippingInfo,
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        success: false,
+        errors: [
+          {
+            message: "EMPTY_CART_CHECKOUT_NOT_ALLOWED",
+          },
+        ],
+      });
+    });
+
+    it("TC_CHECKOUT_EXTRA_20: products có dữ liệu nhưng totalPrice = 0 -> Reject EMPTY_CART", async () => {
+      mockCartCollection.findOne.mockResolvedValue({
+        ...validCart,
+        products: [
+          {
+            productId: "507f1f77bcf86cd799439012",
+            quantity: 1,
+          },
+        ],
+        totalPrice: 0,
+        finalPrice: 0,
+      });
+
+      const response = await request(app)
+        .post("/api/checkout")
+        .set("Authorization", validAuthHeader)
+        .send({
+          typePayment: "cod",
+          shippingInfo: validShippingInfo,
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        success: false,
+        errors: [
+          {
+            message: "EMPTY_CART_CHECKOUT_NOT_ALLOWED",
+          },
+        ],
+      });
+    });
+        it("TC_CHECKOUT_EXTRA_21: Ép schema cho payment type không hợp lệ -> fallback 400", async () => {
+      const schemaSpy = jest
+        .spyOn(checkoutSchema, "safeParse")
+        .mockReturnValueOnce({
+          success: true,
+          data: {
+            typePayment: "paypal",
+            shippingInfo: validShippingInfo,
+          },
+        } as any);
+
+      mockCartCollection.findOne.mockResolvedValue({
+        ...validCart,
+        products: [
+          {
+            productId: "507f1f77bcf86cd799439012",
+            quantity: 1,
+          },
+        ],
+        totalPrice: 400000,
+        finalPrice: 400000,
+      });
+
+      const response = await request(app)
+        .post("/api/checkout")
+        .set("Authorization", validAuthHeader)
+        .send({
+          typePayment: "paypal",
+          shippingInfo: validShippingInfo,
+        });
+
+      expect(response.status).toBe(400);
+
+      expect(response.body).toEqual({
+        error: "Loại thanh toán không hợp lệ",
+      });
+
+      schemaSpy.mockRestore();
+    });
+        it("TC_CHECKOUT_EXTRA_22: cart.products trở thành undefined khi tạo orderData -> fallback []", async () => {
+      let productsAccessCount = 0;
+
+      const dynamicCart = {
+        userId: "507f1f77bcf86cd799439011",
+        totalPrice: 400000,
+        finalPrice: 400000,
+
+        get products() {
+          productsAccessCount++;
+
+          // Lần 1: Array.isArray(cart.products)
+          // Lần 2: cart.products.length
+          if (productsAccessCount <= 2) {
+            return [
+              {
+                productId: "507f1f77bcf86cd799439012",
+                quantity: 1,
+              },
+            ];
+          }
+
+          // Lần 3: products: cart.products || []
+          return undefined;
+        },
+      };
+
+      mockCartCollection.findOne.mockResolvedValue(dynamicCart);
+
+      const response = await request(app)
+        .post("/api/checkout")
+        .set("Authorization", validAuthHeader)
+        .send({
+          typePayment: "cod",
+          shippingInfo: validShippingInfo,
+        });
+
+      expect(response.status).toBe(200);
+
+      expect(mockCheckoutCollection.insertOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          products: [],
+        }),
+      );
+    });
+        it("TC_CHECKOUT_EXTRA_23: req.ip không tồn tại -> sử dụng IP mặc định 127.0.0.1", async () => {
+      mockCartCollection.findOne.mockResolvedValue({
+        ...validCart,
+        products: [
+          {
+            productId: "507f1f77bcf86cd799439012",
+            quantity: 1,
+          },
+        ],
+        totalPrice: 400000,
+        finalPrice: 400000,
+      });
+
+      const mockReq = {
+        body: {
+          typePayment: "vnpay",
+          shippingInfo: validShippingInfo,
+        },
+        user: {
+          _id: "507f1f77bcf86cd799439011",
+        },
+
+        // Quan trọng:
+        // không khai báo ip để req.ip === undefined
+      } as any;
+
+      const status = jest.fn().mockReturnThis();
+      const json = jest.fn().mockReturnThis();
+
+      const mockRes = {
+        status,
+        json,
+      } as any;
+
+      await createCheckout(mockReq, mockRes);
+
+      expect(status).toHaveBeenCalledWith(200);
+    });
+  });
+
 });
