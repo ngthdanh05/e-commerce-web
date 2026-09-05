@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">38.88% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>16/18</span>
+                <span class='fraction'>7/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.88% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>16/18</span>
+                <span class='fraction'>0/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>0/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>7/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -107,17 +107,15 @@
 <a name='L42'></a><a href='#L42'>42</a>
 <a name='L43'></a><a href='#L43'>43</a>
 <a name='L44'></a><a href='#L44'>44</a>
-<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-yes">5x</span>
+<a name='L45'></a><a href='#L45'>45</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -130,31 +128,33 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { z } from "zod";
 import { ObjectId } from "mongodb";
 &nbsp;
-const objectIdSchema = z.string().refine((val) =&gt; ObjectId.isValid(val), {
+const objectIdSchema = z.string().refine(<span class="fstat-no" title="function not covered" >(v</span>al) =&gt; <span class="cstat-no" title="statement not covered" >ObjectId.isValid(val),</span> {
   message: "INVALID_PRODUCT_ID",
 });
 &nbsp;
@@ -183,16 +183,16 @@ export const productIdParamSchema = z.object({
 &nbsp;
 // Schema Query Phân trang (GET /api/products)
 export const productQuerySchema = z.object({
-  page: z.preprocess((val) =&gt; {
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (val === undefined || val === null) <span class="cstat-no" title="statement not covered" >return 1;</span>
-    const parsed = Number(val);
-    return isNaN(parsed) || parsed &lt; 1 ? 1 : parsed;
+  page: z.preprocess(<span class="fstat-no" title="function not covered" >(v</span>al) =&gt; {
+<span class="cstat-no" title="statement not covered" >    if (val === undefined || val === null) <span class="cstat-no" title="statement not covered" >return 1;</span></span>
+    const parsed = <span class="cstat-no" title="statement not covered" >Number(val);</span>
+<span class="cstat-no" title="statement not covered" >    return isNaN(parsed) || parsed &lt; 1 ? 1 : parsed;</span>
   }, z.number().int().min(1).max(1000).optional().default(1)),
-  limit: z.preprocess((val) =&gt; {
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (val === undefined || val === null) <span class="cstat-no" title="statement not covered" >return 10;</span>
-    const parsed = Number(val);
-    if (isNaN(parsed) || parsed &lt; 1) return 10;
-    return parsed &gt; 100 ? 100 : parsed;
+  limit: z.preprocess(<span class="fstat-no" title="function not covered" >(v</span>al) =&gt; {
+<span class="cstat-no" title="statement not covered" >    if (val === undefined || val === null) <span class="cstat-no" title="statement not covered" >return 10;</span></span>
+    const parsed = <span class="cstat-no" title="statement not covered" >Number(val);</span>
+<span class="cstat-no" title="statement not covered" >    if (isNaN(parsed) || parsed &lt; 1) <span class="cstat-no" title="statement not covered" >return 10;</span></span>
+<span class="cstat-no" title="statement not covered" >    return parsed &gt; 100 ? 100 : parsed;</span>
   }, z.number().int().min(1).max(100).optional().default(10)),
 });
 &nbsp;</pre></td></tr></table></pre>
@@ -202,7 +202,7 @@ export const productQuerySchema = z.object({
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-08-25T13:05:41.492Z
+                at 2026-09-05T14:45:42.637Z
             </div>
         <script src="../../prettify.js"></script>
         <script>
