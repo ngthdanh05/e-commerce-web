@@ -1,6 +1,11 @@
 import request from "supertest";
 import bcrypt from "bcryptjs";
 import { userCollection } from "../models/user.model";
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+} from "../controllers/user.controller";
 
 // ============================================================================
 // MOCKING MODULES & DATABASE
@@ -29,7 +34,7 @@ jest.mock("middleware/auth", () => ({
     if (authHeader && authHeader.includes("admin")) {
       req.user = { id: "admin_id", role: "admin" };
     } else {
-      req.user = { id: "user_id", role: "user" };
+      req.user = { id: "user_id", role: "user", email: "user@test.com" };
     }
     next();
   },
@@ -49,9 +54,20 @@ import app from "../app";
 
 describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
   let mockCollection: any;
+  beforeAll(() => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "log").mockImplementation(() => {});
+  });
+
+  // Khôi phục lại console sau khi chạy xong tất cả test cases
+  afterAll(() => {
+    jest.restoreAllMocks();
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(console, "log").mockImplementation(() => {});
 
     (bcrypt.hash as jest.Mock).mockResolvedValue(MOCK_HASH);
     (bcrypt.hashSync as jest.Mock).mockReturnValue(MOCK_HASH);
@@ -159,6 +175,35 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
       expect(response.status).toBe(400);
       expect(response.body).toEqual({ error: "ACCOUNT_ALREADY_EXISTS" });
     });
+
+    it("TC-AUTH-NEW-01: [DB Error 500] Register khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app).post("/api/auth/register").send({
+        name: "Test User",
+        email: "valid@example.com",
+        password: "Password123!",
+      });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
+
+    it("TC-AUTH-NEW-02: [DB Error 500] Register khi insertOne throw exception", async () => {
+      mockCollection.findOne.mockResolvedValue(null);
+      mockCollection.insertOne.mockRejectedValue(new Error("Write failed"));
+
+      const response = await request(app).post("/api/auth/register").send({
+        name: "Test User",
+        email: "valid@example.com",
+        password: "Password123!",
+      });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
   });
 
   // ============================================================================
@@ -220,10 +265,36 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
       expect(response.status).toBe(401);
       expect(response.body).toEqual({ error: "WRONG_PASSWORD" });
     });
+
+    it("TC-AUTH-NEW-03: [Account Not Found] Đăng nhập email không tồn tại -> 404", async () => {
+      mockCollection.findOne.mockResolvedValue(null);
+
+      const response = await request(app).post("/api/auth/login").send({
+        email: "notexist@example.com",
+        password: "Password123!",
+      });
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: "ACCOUNT_NOT_FOUND" });
+    });
+
+    it("TC-AUTH-NEW-04: [DB Error 500] Login khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app).post("/api/auth/login").send({
+        email: "valid@example.com",
+        password: "Password123!",
+      });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
   });
 
   // ============================================================================
-  // 3. Admin User Management Routes (/api/admin/users)
+  // 3. Admin User Management Routes (/api/admin/users) & Logout
   // ============================================================================
   describe("Admin User Management & Logout", () => {
     it("TC-AUTH-08: [Logout] Đăng xuất người dùng thành công", async () => {
@@ -264,5 +335,215 @@ describe("SCRUM-17: Auth Module Validation & Handler Test Suite", () => {
 
       expect(response.status).toBe(404);
     });
+  });
+
+  // ============================================================================
+  // 4. GET /api/profile - Profile handler (previously 0% coverage)
+  // ============================================================================
+  describe("GET /api/profile - Profile Handler", () => {
+    it("TC-AUTH-NEW-07: [Valid Profile] Lấy profile người dùng thành công", async () => {
+      mockCollection.findOne.mockResolvedValue({
+        _id: "user_123",
+        name: "Test User",
+        email: "user@test.com",
+        role: "user",
+      });
+
+      const response = await request(app)
+        .get("/api/profile")
+        .set("Authorization", "Bearer user_token");
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        success: true,
+        data: expect.objectContaining({ email: "user@test.com" }),
+      });
+    });
+
+    it("TC-AUTH-NEW-08: [Profile Not Found] User không tồn tại trong DB -> 404", async () => {
+      mockCollection.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .get("/api/profile")
+        .set("Authorization", "Bearer user_token");
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({
+        success: false,
+        message: "USER_NOT_FOUND",
+      });
+    });
+
+    it("TC-AUTH-NEW-09: [DB Error 500] Profile khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app)
+        .get("/api/profile")
+        .set("Authorization", "Bearer user_token");
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({
+        success: false,
+        message: "INTERNAL_SERVER_ERROR",
+      });
+    });
+  });
+
+  // ============================================================================
+  // 5. GET /api/admin/users - getAllUsers edge cases
+  // ============================================================================
+  describe("GET /api/admin/users - getAllUsers Edge Cases", () => {
+    it("TC-AUTH-NEW-10: [Pagination Fallback] page & limit là chuỗi không hợp lệ -> dùng default 1/10", async () => {
+      const response = await request(app)
+        .get("/api/admin/users?page=abc&limit=xyz")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.pagination).toMatchObject({
+        currentPage: 1,
+        limit: 10,
+      });
+    });
+
+    it("TC-AUTH-NEW-11: [DB Error 500] getAllUsers khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app)
+        .get("/api/admin/users")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
+  });
+
+  // ============================================================================
+  // 6. PUT /api/admin/users/:id/block - toggleBlockUser edge cases
+  // ============================================================================
+  describe("PUT /api/admin/users/:id/block - toggleBlockUser Edge Cases", () => {
+    it("TC-AUTH-NEW-12: [User Not Found] Toggle block user không tồn tại -> 404", async () => {
+      mockCollection.findOne.mockResolvedValue(null);
+
+      const response = await request(app)
+        .put("/api/admin/users/507f1f77bcf86cd799439011/block")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`)
+        .send({ block: true });
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: "USER_NOT_FOUND" });
+    });
+
+    it("TC-AUTH-NEW-13: [Unblock User] Mở khóa user thành công -> message 'unblocked'", async () => {
+      mockCollection.findOne.mockResolvedValue({
+        _id: "507f1f77bcf86cd799439011",
+        isBlocked: true,
+      });
+
+      const response = await request(app)
+        .put("/api/admin/users/507f1f77bcf86cd799439011/block")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`)
+        .send({ block: false });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        success: true,
+        message: "User has been unblocked",
+      });
+    });
+
+    it("TC-AUTH-NEW-14: [DB Error 500] toggleBlockUser khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app)
+        .put("/api/admin/users/507f1f77bcf86cd799439011/block")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`)
+        .send({ block: true });
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
+  });
+
+  // ============================================================================
+  // 7. DELETE /api/admin/users/:id - deleteUser edge cases
+  // ============================================================================
+  describe("DELETE /api/admin/users/:id - deleteUser Edge Cases", () => {
+    it("TC-AUTH-NEW-15: [Delete Success] Xóa user tồn tại thành công -> 200", async () => {
+      mockCollection.findOne.mockResolvedValue({
+        _id: "507f1f77bcf86cd799439011",
+        name: "User To Delete",
+        email: "delete@example.com",
+      });
+
+      const response = await request(app)
+        .delete("/api/admin/users/507f1f77bcf86cd799439011")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        success: true,
+        message: "User deleted successfully",
+      });
+      expect(mockCollection.deleteOne).toHaveBeenCalledTimes(1);
+    });
+
+    it("TC-AUTH-NEW-16: [DB Error 500] deleteUser khi getCollection throw exception", async () => {
+      (userCollection.getCollection as jest.Mock).mockRejectedValue(
+        new Error("DB connection failed"),
+      );
+
+      const response = await request(app)
+        .delete("/api/admin/users/507f1f77bcf86cd799439011")
+        .set("Authorization", `Bearer ${MOCK_TOKEN}`);
+
+      expect(response.status).toBe(500);
+      expect(response.body).toEqual({ error: "INTERNAL_SERVER_ERROR" });
+    });
+  });
+});
+
+// ============================================================================
+// 8. Uncovered Lines (L16, L47, L93-94) - Guard Clauses & Exception Catching
+// ============================================================================
+describe("Coverage Completion - Uncovered Lines (L16, L47, L93-94)", () => {
+  it("TC-AUTH-BYPASS-01: [Direct Unit Test] Trigger Guard Clauses L16 & L47 khi gọi trực tiếp Controller thiếu body fields", async () => {
+    const reqMissing = { body: {} } as any;
+    const res = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as any;
+
+    // Gọi trực tiếp register handler với body rỗng để trigger if (!name || !email || !password) -> L16
+    await registerUser(reqMissing, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    res.status.mockClear();
+
+    // Gọi trực tiếp login handler với body rỗng để trigger if (!email || !password) -> L47
+    await loginUser(reqMissing, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+  });
+
+  it("TC-AUTH-LOGOUT-ERR-01: [Logout 500] Trigger catch block L93-94 khi logout gặp sự cố", async () => {
+    jest.spyOn(console, "log").mockImplementation(() => {});
+    const req = {} as any;
+    const res = {
+      clearCookie: jest.fn().mockImplementationOnce(() => {
+        throw new Error("Clear Cookie Error");
+      }),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
+    } as any;
+
+    await logoutUser(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({ error: "Logout failed" });
   });
 });
