@@ -1,0 +1,7 @@
+# Root gitignore
+node_modules/
+.DS_Store
+*.log
+.env
+package.json
+package-lock.json
