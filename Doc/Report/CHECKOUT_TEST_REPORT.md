@@ -269,6 +269,18 @@ Bộ test hiện tại trong `checkout.test.ts` gồm **25 test cases**, trong �
 
 ---
 
+## 🟢 PHẦN 2: KIỂM THỬ API THỰC TẾ BẰNG POSTMAN
+| Test Case | Mục tiêu | Expected | Actual | Kết quả |
+|---|---|---|---|---|
+| TC_CHK_01 | Checkout COD hợp lệ | 200 | 200 | PASS |
+| TC_CHK_02 | Checkout VNPay hợp lệ | 200 + paymentUrl | 200 + paymentUrl | PASS |
+| TC_CHK_03 | Phone 9 số | 400 INVALID_PHONE_NUMBER | 400 INVALID_PHONE_NUMBER | PASS |
+| TC_CHK_04 | Address 9 ký tự | 400 ADDRESS_TOO_SHORT | 400 ADDRESS_TOO_SHORT | PASS |
+| TC_CHK_05 | Payment paypal | 400 INVALID_PAYMENT_METHOD | 400 INVALID_PAYMENT_METHOD | PASS |
+| TC_CHK_06 | Tampered VNPay Hash | 400 INVALID_CHECKSUM | 400 INVALID_CHECKSUM | PASS |
+
+Postman được sử dụng để kiểm thử Black-box/API thực tế của module Checkout. Kết quả PASS được xác định khi Actual Result khớp Expected Result, không phụ thuộc vào việc status code là 200 hay 400. Các trường hợp 400 như invalid phone, invalid payment hoặc tampered hash được xem là PASS vì hệ thống đã từ chối đúng dữ liệu không hợp lệ.
+
 ## 🟢 PHẦN 3: PHÂN TÍCH ĐỘ BAO PHỦ VÀ CONTROL FLOW
 
 ### 1. Phân tích Đồ thị Dòng điều khiển (Control Flow Graph - CFG)
