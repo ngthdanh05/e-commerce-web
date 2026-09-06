@@ -45,6 +45,25 @@ stateDiagram-v2
 - **User thường (`role = "user"`)**: Truy cập endpoint quản trị $\to$ **HTTP 403 Forbidden**.
 - **Admin (`role = "admin"`)**: Truy cập endpoint quản trị $\to$ **HTTP 200 OK**.
 
+#### D. Bảng Phân tích Phân vùng tương đương (EP) chi tiết cho Input
+
+| Tham số / Thuộc tính        | Ràng buộc đặc tả (Specs)                               | Lớp hợp lệ (Valid EP)                                                   | Lớp không hợp lệ (Invalid EP)                          |
+| :-------------------------- | :----------------------------------------------------- | :---------------------------------------------------------------------- | :----------------------------------------------------- |
+| **`status`** (API Update)   | Chỉ chấp nhận các trạng thái định nghĩa sẵn trong Enum | `"pending", "processing", "shipping", "success", "failed", "cancelled"` | Rỗng (`""`), `null`, `"xyz_status"`, số nguyên (`123`) |
+| **`status`** (API Lọc list) | Truyền query param filter theo trạng thái              | `"success", "pending", "failed"` (gán vào `filter.status`)              | Chuỗi rác (Bỏ qua filter, query toàn bộ DB)            |
+| **`page`** (Phân trang)     | `parseInt(req.query.page) \|\| 1`                      | Số nguyên $> 0$ (vd: `page=2`)                                          | Bỏ trống $\to$ Tự động Fallback về trang `1`           |
+| **`limit`** (Phân trang)    | `parseInt(req.query.limit) \|\| 10`                    | Số nguyên $> 0$ (vd: `limit=50`)                                        | Bỏ trống $\to$ Tự động Fallback về `10` item/trang     |
+
+#### E. Bảng Phân tích Giá trị biên (BVA - Boundary Value Analysis) cho mã `orderId`
+
+Toàn bộ hệ thống sử dụng kiểu dữ liệu `ObjectId` của MongoDB. Khối lệnh bảo vệ `ObjectId.isValid(orderId)` tạo ra các đường biên vật lý vô cùng khắt khe.
+
+| Tham số       | Logic bảo vệ mã nguồn       | Giá trị biên kiểm thử (BVA)                             | Kết quả hành vi (Expected)                           |
+| :------------ | :-------------------------- | :------------------------------------------------------ | :--------------------------------------------------- |
+| **`orderId`** | Yêu cầu định dạng Hex chuẩn | **Biên dưới (23 ký tự):** `64a2b9a7...` (Thiếu 1 ký tự) | Lọt vào nhánh `if(!isValid)` $\to$ **HTTP 400**      |
+|               | `orderId.length === 24`     | **Biên chuẩn (24 ký tự):** `64a2b9a7f...` (Chuẩn xác)   | Hợp lệ $\to$ Đi tiếp vào DB $\to$ **HTTP 200 / 404** |
+|               | (Hệ thập lục phân)          | **Biên trên (25 ký tự):** `64a2b9a7f3...` (Dư 1 ký tự)  | Lọt vào nhánh `if(!isValid)` $\to$ **HTTP 400**      |
+
 ---
 
 ### 1.2. Danh mục Toàn bộ 33 Test Cases (Test Suite Catalog)
@@ -82,17 +101,17 @@ _(Được chuẩn hóa theo format ma trận kỹ thuật, hiển thị rõ K�
 
 #### Bảng 1.2b: Phân hệ Whitebox Testing (Kiểm thử cấu trúc nội bộ - 9 TCs)
 
-| Test Case ID      | Mục tiêu phủ Coverage (Structural Target)      | Kỹ thuật (Whitebox) | Setup Mock & Payload                                             | Nhánh Code bị kích hoạt / Assertion             |
-| :---------------- | :--------------------------------------------- | :------------------ | :--------------------------------------------------------------- | :---------------------------------------------- |
-| **TC_ORD_ADD_12** | Phủ vòng lặp khi User bị rỗng trong hàm Admin. | Nullish Injection   | Mock DB: Đơn hàng có `userId` nhưng bảng User `findOne` trả rỗng | Fallback tạo user object là `null`              |
-| **TC_ORD_ADD_13** | Phủ toán tử `?? 0` khi DB mất `finalPrice`.    | Data Anomaly        | Mock DB Order: Object không có `finalPrice`                      | Kích hoạt `o.finalPrice ?? o.totalPrice ?? 0`   |
-| **TC_ORD_ADD_15** | Kiểm tra lỗi Concurrency khi update xịt.       | Mock Implementation | `updateOne.mockResolvedValue({ modifiedCount: 0 })`              | Kích hoạt `if (modifiedCount === 0) return 400` |
-| **TC_ORD_ADD_16** | Phủ lỗi Type Casting khi ép kiểu ID.           | Data Injection      | Truyền `orderId` mảng/object sai Type                            | Tự chuyển đổi query `_id` vs `orderId`          |
-| **TC_ORD_ADD_21** | Phủ toán tử `?? 0` khi DB mất price (User).    | Data Anomaly        | Mock DB trả ra đơn khuyết tiền cho User list                     | Kích hoạt `?? 0` ở hàm `getAllOrders`           |
-| **TC_ORD_ADD_23** | Phủ chuẩn hóa (normalize) String.              | Type Reflection     | Mock hàm normalize nhận String                                   | Trả ra chính String đó                          |
-| **TC_ORD_ADD_24** | Phủ chuẩn hóa Value Object.                    | Object Reflection   | Mock hàm normalize nhận `{ value: "pending" }`                   | Nhánh trả ra `status.value`                     |
-| **TC_ORD_ADD_25** | Phủ mặc định giá trị lạ về `'pending'`.        | Switch Default      | Mock hàm normalize nhận type quái dị                             | Rơi xuống dòng `return "pending"`               |
-| **TC_ORD_ADD_33** | Kích hoạt toàn bộ khối `catch(error)`.         | Exception Throwing  | `orderCol.mockRejectedValue(new Error("DB Down"))`               | Nhảy xuống block catch, trả ra 500              |
+| Test Case ID      | Tên Test Case (Mục tiêu kiểm thử) | Kỹ thuật (Whitebox) | Input Payload / Setup Mock                                                 | Expected Status | Expected Response / Nhánh Code                                          |
+| :---------------- | :-------------------------------- | :------------------ | :------------------------------------------------------------------------- | :-------------: | :---------------------------------------------------------------------- |
+| **TC_ORD_ADD_12** | Phủ vòng lặp khi User rỗng        | Nullish Injection   | `GET /api/admin/orders`<br>Mock DB: `userCol.find` rỗng                    |     **200**     | Trả về `user: null`<br>Phủ fallback `user ? ... : null`                 |
+| **TC_ORD_ADD_13** | Phủ toán tử `?? 0` (Admin)        | Data Anomaly        | `GET /api/admin/orders`<br>Mock DB: Khuyết `finalPrice`                    |     **200**     | Trả về `amount: totalPrice`<br>Phủ `o.finalPrice ?? ...`                |
+| **TC_ORD_ADD_15** | Kiểm tra lỗi Concurrency          | Mock DB Error       | `PUT /api/admin/orders/{id}`<br>Mock: `updateOne` $\to$ `modifiedCount: 0` |     **400**     | `{ error: "ORDER_NOT_UPDATED" }`<br>Phủ `if (modifiedCount === 0)`      |
+| **TC_ORD_ADD_16** | Phủ lỗi Type Casting ID           | Data Injection      | `PUT /api/admin/orders/{id}`<br>Input: `orderId` sai Type                  |     **404**     | `{ error: "ORDER_NOT_FOUND" }`<br>Tự ép sang query theo `orderId` chuỗi |
+| **TC_ORD_ADD_21** | Phủ toán tử `?? 0` (User)         | Data Anomaly        | `GET /api/orders`<br>Mock DB: Khuyết `finalPrice`                          |     **200**     | Trả về `amount: 0`<br>Phủ nhánh fallback `?? 0`                         |
+| **TC_ORD_ADD_23** | Phủ chuẩn hóa chuỗi String        | Type Reflection     | `GET /api/orders/detail/{id}`<br>Mock: `status` lưu dạng chuỗi             |     **200**     | Trả ra trạng thái chuẩn<br>Phủ `typeof status === 'string'`             |
+| **TC_ORD_ADD_24** | Phủ chuẩn hóa Value Object        | Object Reflection   | `GET /api/orders/detail/{id}`<br>Mock: `status` là `{ value: "pending" }`  |     **200**     | Trả ra `pending`<br>Phủ nhánh trả về `status.value`                     |
+| **TC_ORD_ADD_25** | Phủ Switch-case Default           | Data Mutation       | `GET /api/orders/detail/{id}`<br>Mock: `status` là Number/Null             |     **200**     | Rơi vào Default $\to$ Trả ra `pending`                                  |
+| **TC_ORD_ADD_33** | Kích hoạt bắt block `catch`       | Exception Throwing  | Bất kỳ API Order nào<br>Mock: ném `Error("DB Down")`                       |     **500**     | `{ error: "INTERNAL_SERVER_ERROR" }`<br>Nhảy vào block `catch (error)`  |
 
 ---
 
