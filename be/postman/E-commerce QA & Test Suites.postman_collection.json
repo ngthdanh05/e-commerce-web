@@ -4,7 +4,7 @@
     "name": "E-commerce QA & Test Suites",
     "description": "Bộ thử nghiệm cho quy trình đặt hàng COD và thanh toán Sandbox qua cổng VNPay.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "39845541",
+    "_exporter_id": "57642471",
     "_collection_link": "https://go.postman.co/collection/39845541-cc26c9c6-3ca0-4a3b-877f-20d68576e8fa?source=collection_link"
   },
   "item": [
@@ -45,12 +45,18 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test.user.{{$randomInt}}@example.com\",\n    \"password\": \"Password123!\"\n}"
+                  "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test.checkout01@example.com\",\n    \"password\": \"Password123!\"\n}"
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
                 }
               },
               "response": []
@@ -90,8 +96,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
                 }
               },
               "response": []
@@ -127,8 +139,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
                 }
               },
               "response": []
@@ -168,8 +186,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "register"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "register"
+                  ]
                 }
               },
               "response": []
@@ -212,8 +236,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "response": []
@@ -253,8 +283,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "response": []
@@ -294,8 +330,14 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/login",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "login"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
                 }
               },
               "response": []
@@ -329,8 +371,13 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/profile",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "profile"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "profile"
+                  ]
                 }
               },
               "response": []
@@ -366,8 +413,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/logout",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "auth", "logout"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "logout"
+                  ]
                 }
               },
               "response": []
@@ -410,8 +463,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/users?page=1&limit=10",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "users"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -465,8 +524,16 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/users/{{targetUserId}}/block",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "users", "{{targetUserId}}", "block"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{targetUserId}}",
+                    "block"
+                  ]
                 }
               },
               "response": []
@@ -498,8 +565,15 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/users/507f1f77bcf86cd799439099",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "users", "507f1f77bcf86cd799439099"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "507f1f77bcf86cd799439099"
+                  ]
                 }
               },
               "response": []
@@ -554,8 +628,13 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/cart",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart"
+              ]
             }
           },
           "response": []
@@ -605,8 +684,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
             }
           },
           "response": []
@@ -635,7 +720,9 @@
             {
               "listen": "prerequest",
               "script": {
-                "exec": [""],
+                "exec": [
+                  ""
+                ],
                 "type": "text/javascript",
                 "packages": {},
                 "requests": {}
@@ -670,8 +757,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
             }
           },
           "response": []
@@ -709,8 +802,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
             }
           },
           "response": []
@@ -748,8 +847,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
             }
           },
           "response": []
@@ -787,8 +892,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
             }
           },
           "response": []
@@ -828,8 +939,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/update",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "update"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "update"
+              ]
             }
           },
           "response": []
@@ -913,8 +1030,14 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/cart/delete",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "delete"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "delete"
+              ]
             }
           },
           "response": []
@@ -925,7 +1048,48 @@
       "name": "Checkout & Payment Gateway Test Suite",
       "item": [
         {
-          "name": "TC_CHK_01 - Checkout COD Success",
+          "name": "SETUP - Add Product To Cart",
+          "protocolProfileBehavior": {
+            "followRedirects": true
+          },
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n  \"productId\": \"{{validProductId}}\",\r\n  \"quantity\": 1\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/cart/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cart",
+                "add"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_01 - Empty Cart",
           "event": [
             {
               "listen": "test",
@@ -980,17 +1144,40 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/checkout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "SETUP CART FOR TC02",
-          "protocolProfileBehavior": {
-            "followRedirects": true
-          },
+          "name": "TC_CHK_03 - Valid Phone",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Order ID generated and returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "    pm.expect(jsonData.orderId).to.include(\"PAY\");",
+                  "    pm.environment.set(\"lastOrderId\", jsonData.orderId);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "bearer",
@@ -1003,10 +1190,19 @@
               ]
             },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\r\n  \"productId\": \"{{validProductId}}\",\r\n  \"quantity\": 1\r\n}",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1014,15 +1210,427 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/cart/add",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "cart", "add"]
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "TC_CHK_02 - Checkout VNPay Success (Build Payment URL)",
+          "name": "TC_CHK_04 - Phone 9 digits",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"091234567\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_05 - Phone 11 digits",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"09123456789\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_06 - Invalid Phone Prefix",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0123456789\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_07 - Address 9 chars",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"Số 1 HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_08 - Address 10 chars",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"1234567890\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_09 - Address 200 chars",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set(\"address200\", \"A\".repeat(200));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"{{address200}}\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_10 - Address 201 chars",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "pm.variables.set(\"address201\", \"A\".repeat(201));"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"{{address201}}\",\n        \"email\": \"test@example.com\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_11A - Valid Payment Type COD",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Order ID generated and returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('orderId');",
+                  "    pm.expect(jsonData.orderId).to.include(\"PAY\");",
+                  "    pm.environment.set(\"lastOrderId\", jsonData.orderId);",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bearerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_11B - Valid Payment Type VNPay",
           "event": [
             {
               "listen": "test",
@@ -1071,92 +1679,19 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/checkout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "TC_CHK_03 - Checkout BVA Phone Min- (9 digits)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 400 Bad Request\", function () {",
-                  "    pm.response.to.have.status(400);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"091234567\",\n        \"address\": \"123 Đường Nguyễn Huệ, Quận 1, TP.HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/checkout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_CHK_04 - Checkout BVA Address Min- (9 chars)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 400 Bad Request\", function () {",
-                  "    pm.response.to.have.status(400);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{token}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"typePayment\": \"cod\",\n    \"shippingInfo\": {\n        \"fullName\": \"Nguyễn Văn A\",\n        \"phoneNumber\": \"0912345678\",\n        \"address\": \"Số 1 HCM\",\n        \"email\": \"test@example.com\"\n    }\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/checkout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_CHK_05 - Checkout Invalid Payment Type ('paypal')",
+          "name": "TC_CHK_12 - Invalid Payment Type",
           "event": [
             {
               "listen": "test",
@@ -1188,14 +1723,19 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/checkout",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "TC_CHK_06 - VNPay Callback Tampered Hash Checksum (400)",
+          "name": "TC_CHK_13 - VNPay Tampered Hash",
           "event": [
             {
               "listen": "test",
@@ -1205,7 +1745,9 @@
                   "    pm.response.to.have.status(400);",
                   "});"
                 ],
-                "type": "text/javascript"
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
               }
             }
           ],
@@ -1214,8 +1756,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId={{lastOrderId}}&vnp_SecureHash=INVALID_FORGED_HASH_CODE",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "checkout", "vnpay-callback"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "vnpay-callback"
+              ],
               "query": [
                 {
                   "key": "vnp_ResponseCode",
@@ -1228,6 +1776,108 @@
                 {
                   "key": "vnp_SecureHash",
                   "value": "INVALID_FORGED_HASH_CODE"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC_CHK_14 - VNPay Valid Hash Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 302 Redirect\", function () {",
+                  "    pm.response.to.have.status(302);",
+                  "});",
+                  "",
+                  "pm.test(\"Redirect tới checkout-success\", function () {",
+                  "    pm.expect(pm.response.headers.get(\"Location\"))",
+                  "        .to.include(\"/checkout-success?orderId=\");",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const CryptoJS = pm.require(\"npm:crypto-js@4.2.0\");\r",
+                  "\r",
+                  "const secret = pm.environment.get(\"VNPAY_SECURE_SECRET\");\r",
+                  "const orderId = pm.environment.get(\"lastOrderId\");\r",
+                  "\r",
+                  "if (!secret) {\r",
+                  "    throw new Error(\"Thiếu VNPAY_SECURE_SECRET trong Local dev\");\r",
+                  "}\r",
+                  "\r",
+                  "if (!orderId) {\r",
+                  "    throw new Error(\"Thiếu lastOrderId. Hãy chạy TC_CHK_11B - Valid Payment Type VNPay trước.\");\r",
+                  "}\r",
+                  "\r",
+                  "const paramsToSign = {\r",
+                  "    vnp_ResponseCode: \"00\",\r",
+                  "    vnp_OrderInfo: `orderId=${orderId}`\r",
+                  "};\r",
+                  "\r",
+                  "const sorted = Object.keys(paramsToSign)\r",
+                  "    .sort()\r",
+                  "    .map((key) => `${key}=${paramsToSign[key]}`)\r",
+                  "    .join(\"&\");\r",
+                  "\r",
+                  "const validHash = CryptoJS\r",
+                  "    .HmacSHA512(sorted, secret)\r",
+                  "    .toString(CryptoJS.enc.Hex);\r",
+                  "\r",
+                  "pm.environment.set(\"validHash\", validHash);\r",
+                  "\r",
+                  "console.log(\"Order ID:\", orderId);\r",
+                  "console.log(\"Sign data:\", sorted);\r",
+                  "console.log(\"Valid hash:\", validHash);"
+                ],
+                "type": "text/javascript",
+                "packages": {
+                  "npm:crypto-js@4.2.0": {
+                    "id": "npm:crypto-js@4.2.0"
+                  }
+                },
+                "requests": {}
+              }
+            }
+          ],
+          "protocolProfileBehavior": {
+            "followRedirects": false
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/checkout/vnpay-callback?vnp_ResponseCode=00&vnp_OrderInfo=orderId={{lastOrderId}}&vnp_SecureHash={{validHash}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "checkout",
+                "vnpay-callback"
+              ],
+              "query": [
+                {
+                  "key": "vnp_ResponseCode",
+                  "value": "00"
+                },
+                {
+                  "key": "vnp_OrderInfo",
+                  "value": "orderId={{lastOrderId}}"
+                },
+                {
+                  "key": "vnp_SecureHash",
+                  "value": "{{validHash}}"
                 }
               ]
             }
@@ -1264,8 +1914,13 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/products?page=1&limit=500",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products"],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
               "query": [
                 {
                   "key": "page",
@@ -1312,8 +1967,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/products/{{validProductId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products", "{{validProductId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
             }
           },
           "response": []
@@ -1338,8 +1999,14 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/products/invalid-object-id-format",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products", "invalid-object-id-format"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "invalid-object-id-format"
+              ]
             }
           },
           "response": []
@@ -1383,8 +2050,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
             }
           },
           "response": []
@@ -1424,8 +2096,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
             }
           },
           "response": []
@@ -1465,8 +2142,13 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/products",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
             }
           },
           "response": []
@@ -1496,8 +2178,15 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/api/products/delete/507f1f77bcf86cd799439099",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "products", "delete", "507f1f77bcf86cd799439099"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "delete",
+                "507f1f77bcf86cd799439099"
+              ]
             }
           },
           "response": []
@@ -1542,14 +2231,57 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/orders/{{testOrderId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "orders", "{{testOrderId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{testOrderId}}"
+                  ]
                 }
               },
               "response": []
             },
             {
-              "name": "TC_ORD_03 - Delete Other User Order (Forbidden 403)",
+              "name": "TC_ORD_07 - User Access Admin Orders Forbidden",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 403\", function () { pm.response.to.have.status(403); });",
+                      "pm.test(\"Normal user cannot access admin orders\", function () { const json = pm.response.json(); pm.expect(json.success).to.eql(false); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_03 - Delete Other User Order (Forbidden)",
               "event": [
                 {
                   "listen": "test",
@@ -1575,8 +2307,234 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/orders/{{otherUserOrderId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "orders", "{{otherUserOrderId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{otherUserOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_13 - Delete Nonexistent Order",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });",
+                      "pm.test(\"Order not found\", function () { const json = pm.response.json(); pm.expect(json.error).to.eql(\"ORDER_NOT_FOUND\"); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/650c5d1f1f77bcf86cd79999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "650c5d1f1f77bcf86cd79999"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_12 - Delete Invalid Order ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                      "pm.test(\"Invalid order ID\", function () { const json = pm.response.json(); pm.expect(json.error).to.eql(\"INVALID_ORDER_ID\"); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/invalid_id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "invalid_id"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_11 - Get Nonexistent Order",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/PAY_NOT_EXIST_999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "PAY_NOT_EXIST_999999"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_10 - Delete Success Order Rejected",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                      "pm.test(\"Completed order cannot be deleted\", function () { const json = pm.response.json(); pm.expect(json.success).to.eql(false); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{successOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{successOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_09 - Delete Shipping Order Rejected",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                      "pm.test(\"Shipping order cannot be deleted\", function () { const json = pm.response.json(); pm.expect(json.success).to.eql(false); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{shippingOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{shippingOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_08 - Delete Own Pending Order Success",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{userToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/orders/{{pendingOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders",
+                    "{{pendingOrderId}}"
+                  ]
                 }
               },
               "response": []
@@ -1611,8 +2569,13 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/orders?page=1&limit=10&status=pending",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "orders"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "orders"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1637,7 +2600,7 @@
           "name": "2. Admin Order Operations",
           "item": [
             {
-              "name": "TC_ORD_04 - Get Orders For Admin Copy",
+              "name": "TC_ORD_04 - Get Orders For Admin",
               "event": [
                 {
                   "listen": "test",
@@ -1667,8 +2630,14 @@
                 ],
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/orders?page=1&limit=10",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "orders"],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders"
+                  ],
                   "query": [
                     {
                       "key": "page",
@@ -1684,7 +2653,7 @@
               "response": []
             },
             {
-              "name": "TC_ORD_05 - Admin Update Status Success (pending -> processing) Copy",
+              "name": "TC_ORD_05 - Admin Update Status Success",
               "event": [
                 {
                   "listen": "test",
@@ -1757,14 +2726,237 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/orders/{{validOrderId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "orders", "{{validOrderId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "{{validOrderId}}"
+                  ]
                 }
               },
               "response": []
             },
             {
-              "name": "TC_ORD_06 - Admin Update Status Invalid Enum (400) Copy",
+              "name": "TC_ORD_18 - Admin Delete Nonexistent Order",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders/PAY_NOT_FOUND",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "PAY_NOT_FOUND"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_17 - Admin Delete Order Success",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Admin deletes order successfully\", function () { const json = pm.response.json(); pm.expect(json.success).to.eql(true); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders/{{adminDeleteOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "{{adminDeleteOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_16 - Admin Update Nonexistent Order",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404\", function () { pm.response.to.have.status(404); });",
+                      "pm.test(\"Order not found\", function () { const json = pm.response.json(); pm.expect(json.error).to.eql(\"ORDER_NOT_FOUND\"); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"status\": \"processing\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders/650c5d1f1f77bcf86cd79999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "650c5d1f1f77bcf86cd79999"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_15 - Illegal Transition Failed To Pending",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                      "pm.test(\"Failed order cannot return to pending\", function () { const json = pm.response.json(); pm.expect(json.success).to.eql(false); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"status\": \"pending\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders/{{failedOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "{{failedOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_14 - Illegal Transition Success To Pending",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });",
+                      "pm.test(\"Illegal transition is rejected\", function () { const json = pm.response.json(); pm.expect(JSON.stringify(json)).to.match(/ILLEGAL_STATUS_TRANSITION|INVALID_STATUS/i); });"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"status\": \"pending\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/orders/{{successOrderId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "{{successOrderId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC_ORD_06 - Admin Update Status",
               "event": [
                 {
                   "listen": "test",
@@ -1798,8 +2990,15 @@
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/admin/orders/{{testOrderId}}",
-                  "host": ["{{baseUrl}}"],
-                  "path": ["api", "admin", "orders", "{{testOrderId}}"]
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "orders",
+                    "{{testOrderId}}"
+                  ]
                 }
               },
               "response": []
@@ -1816,7 +3015,9 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [""]
+        "exec": [
+          ""
+        ]
       }
     },
     {
@@ -1825,7 +3026,9 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [""]
+        "exec": [
+          ""
+        ]
       }
     }
   ]
