@@ -1,71 +1,67 @@
 # 📄 BÁO CÁO KIỂM THỬ TÍNH NĂNG ORDER LIFECYCLE MANAGEMENT
 
-## 🟢 PHẦN 1: BỘ TEST CASE BLACKBOX & WHITEBOX (FULL COVERAGE)
+## LỜI TỰA
 
-### 1. Phân tích Phân vùng tương đương (EP), Kiểm thử Chuyển đổi trạng thái (State Transition) & Ma trận Phân quyền
+Báo cáo này được cấu trúc toàn diện để đáp ứng 3 trọng tâm:
 
-#### A. Phân tích Kiểm soát Quyền sở hữu Đơn hàng (Ownership Guard)
-
-Trong hệ thống thương mại điện tử, lỗ hổng IDOR (Insecure Direct Object Reference) hay BOLA (Broken Object Level Authorization) cho phép kẻ tấn công thay đổi hoặc xóa tài nguyên của người dùng khác.
-
-```
-       [Request Client: User A]                     [Order in MongoDB]
-   +------------------------------+             +------------------------+
-   | req.user._id = "user_A_id"   |             | _id: "order_123"       |
-   | DELETE /api/orders/order_123 |             | userId: "user_B_id"    |
-   +------------------------------+             +------------------------+
-                  |                                          |
-                  +--------------> SO SÁNH <-----------------+
-                                      |
-                         order.userId !== req.user._id
-                                      |
-                                      v
-                        HTTP 403 FORBIDDEN REJECT!
-```
-
-- **Phân vùng hợp lệ (Valid EP)**: Khách hàng chỉ được thao tác (xem, hủy, xóa) trên các đơn hàng mà trường `order.userId.toString() === req.user._id.toString()`.
-- **Phân vùng vi phạm (Invalid EP - Cross-user Attack)**: Khách hàng A gửi request mang Token của mình nhưng truyền `:id` của đơn hàng thuộc quyền sở hữu của Khách hàng B. Hệ thống kích hoạt phòng vệ và từ chối với mã lỗi **HTTP 403 Forbidden**.
+1. Thể hiện sự liên kết giữa thiết kế Hộp đen (BVA/EP) và đo lường Hộp trắng.
+2. Trả lời chính xác định lượng Test Case cho 100% Statement/Branch.
+3. Đánh giá tính phù hợp và giới hạn của phương pháp BVA/EP khi ánh xạ vào kiến trúc mã nguồn.
 
 ---
 
+## 🟢 PHẦN 1: PHÂN TÍCH THIẾT KẾ TEST CASE (BLACKBOX & WHITEBOX)
+
+### 1.1. Phân tích Phân vùng tương đương (EP), Chuyển đổi trạng thái & Phân quyền
+
+#### A. Phân tích Kiểm soát Quyền sở hữu Đơn hàng (Ownership Guard)
+
+Lỗ hổng IDOR (Insecure Direct Object Reference) cho phép kẻ tấn công thay đổi tài nguyên của người dùng khác.
+
+- **Phân vùng hợp lệ (Valid EP)**: `order.userId.toString() === req.user._id.toString()`.
+- **Phân vùng vi phạm (Invalid EP)**: Khách hàng A truyền `:id` đơn hàng của Khách hàng B $\to$ **HTTP 403 Forbidden**.
+
 #### B. Phân tích Quy tắc Chuyển đổi trạng thái (State Transition Rules)
 
-Hệ thống đơn hàng được mô hình hóa như một **Máy trạng thái hữu hạn (Finite State Machine - FSM)** với tập trạng thái:
+Hệ thống đơn hàng là một **Máy trạng thái hữu hạn (Finite State Machine - FSM)**:
 $$S = \{\text{pending}, \text{processing}, \text{shipping}, \text{success}, \text{failed}, \text{cancelled}\}$$
 
 ```mermaid
 stateDiagram-v2
     [*] --> pending: Đặt hàng thành công
+    pending --> processing: Admin duyệt đơn
+    pending --> cancelled: Hủy đơn
+    pending --> deleted: User xóa đơn (Accept 200)
 
-    pending --> processing: Admin duyệt đơn (Accept 200)
-    pending --> cancelled: User/Admin hủy đơn (Accept 200)
-    pending --> deleted: User xóa đơn (status==pending -> Accept 200)
-
-    processing --> shipping: Đang giao hàng (Accept 200)
-    shipping --> success: Giao thành công (Accept 200)
-    shipping --> failed: Giao thất bại (Accept 200)
+    processing --> shipping: Đang giao
+    shipping --> success: Giao thành công
+    shipping --> failed: Giao thất bại
 
     state "CHẶN XÓA ĐƠN (HTTP 400)" as BlockDel {
-        shipping --> [*]: Chặn DELETE (CANNOT_DELETE_ACTIVE_ORDER)
-        success --> [*]: Chặn DELETE (CANNOT_DELETE_ACTIVE_ORDER)
+        shipping --> [*]
+        success --> [*]
     }
 
-    state "CHẶN CHUYỂN TRẠNG THÁI NGƯỢC (HTTP 400)" as IllegalLoop {
-        success --> pending: Chuyển ngược về pending (ILLEGAL_STATUS_TRANSITION)
-        failed --> pending: Chuyển ngược về pending (ILLEGAL_STATUS_TRANSITION)
+    state "CHẶN CHUYỂN NGƯỢC (HTTP 400)" as IllegalLoop {
+        success --> pending
+        failed --> pending
     }
 ```
 
+#### C. Phân tích Phân quyền Quản trị viên (Admin Role Guard)
+
+- **User thường (`role = "user"`)**: Truy cập endpoint quản trị $\to$ **HTTP 403 Forbidden**.
+- **Admin (`role = "admin"`)**: Truy cập endpoint quản trị $\to$ **HTTP 200 OK**.
+
 ---
 
-### 2. Danh mục Toàn bộ 33 Test Cases (Blackbox & Whitebox Catalog)
+### 1.2. Danh mục Toàn bộ 33 Test Cases (Blackbox & Whitebox Catalog)
 
-Để đạt được độ bao phủ tuyệt đối 100%, chiến lược kiểm thử đã áp dụng phân rã rõ ràng thành hai phương pháp:
+Để đạt độ phủ tuyệt đối 100%, chiến lược chia làm 2 phương pháp:
 
-- **Blackbox Testing (24 Test Cases)**: Kiểm thử hộp đen, dựa trên đặc tả API, tập trung kiểm tra Status Code, chặn lỗi phân quyền và luồng State Machine (giống như thao tác HTTP thực tế trên Postman).
-- **Whitebox Testing (9 Test Cases)**: Kiểm thử hộp trắng đi sâu vào cấu trúc nội bộ của mã nguồn để "vét" sạch các điểm mù kỹ thuật (câu lệnh rẽ nhánh rỗng `?? 0`, lỗi CSDL sập mạng, khác biệt kiểu dữ liệu).
+#### A. Phân hệ Blackbox Testing (Kiểm thử chức năng API)
 
-#### 2.1. Phân hệ Blackbox Testing (Kiểm thử chức năng API)
+Tập trung kiểm tra Status Code, chặn lỗi phân quyền và luồng State Machine (giống thao tác HTTP thực tế trên Postman).
 
 | Test Case ID             | Tên Test Case (Mục tiêu kiểm thử)                                 | Expected Status | Nhóm Nghiệp Vụ    |
 | :----------------------- | :---------------------------------------------------------------- | :-------------: | :---------------- |
@@ -94,29 +90,27 @@ stateDiagram-v2
 | **TC_ORD_ADD_31_UNAUTH** | [createOrder] Từ chối tạo đơn khi mất Token/userId                |       401       | Phân quyền (Auth) |
 | **TC_ORD_ADD_32_UNAUTH** | [deleteOrder] Từ chối xóa đơn khi mất Token/userId                |       401       | Phân quyền (Auth) |
 
-#### 2.2. Phân hệ Whitebox Testing (Kiểm thử cấu trúc nội bộ)
+#### B. Phân hệ Whitebox Testing (Kiểm thử cấu trúc nội bộ)
 
-| Test Case ID                | Mục tiêu phủ Code Coverage (Structural Target)                                    | Kỹ thuật sử dụng   | Code Branch nhắm tới            |
-| :-------------------------- | :-------------------------------------------------------------------------------- | :----------------- | :------------------------------ |
-| **TC_ORD_ADD_12**           | Phủ vòng lặp `.map` khi tham chiếu User trong CSDL bị rỗng (null/undefined).      | Mock DB Response   | Nullish Fallback                |
-| **TC_ORD_ADD_13**           | Phủ toán tử `?? 0` khi DB bị khuyết thiếu trường `finalPrice` ở luồng Admin.      | Mock DB Response   | Logical Fallback `??`           |
-| **TC_ORD_ADD_15**           | Ép DB trả về `{ modifiedCount: 0 }` để mô phỏng lỗi Concurrency (Race Condition). | Mock `updateOne`   | Condition `modifiedCount === 0` |
-| **TC_ORD_ADD_16**           | Phủ lỗi cấu trúc nội bộ khi biến ID là chuỗi thay vì instance `ObjectId`.         | Pass string type   | Data Type Casting               |
-| **TC_ORD_ADD_21**           | Phủ toán tử `?? 0` khi DB bị khuyết thiếu trường price ở luồng User.              | Mock DB Response   | Logical Fallback `??`           |
-| **TC_ORD_ADD_23**           | Phủ logic chuẩn hóa (normalize) thuộc tính `status` ở định dạng String.           | Pass string        | `typeof status === 'string'`    |
-| **TC_ORD_ADD_24**           | Phủ logic chuẩn hóa `status` ở định dạng Value Object.                            | Pass object        | `status.value`                  |
-| **TC_ORD_ADD_25**           | Phủ logic mặc định biến `status` lạ về giá trị khởi tạo `'pending'`.              | Pass unknown type  | Switch-case Default             |
-| **TC_ORD_ADD_33_CATCH_ERR** | Kích hoạt toàn bộ khối `catch(error)` ném ra lỗi 500 do DB ngắt kết nối.          | Mock `throw Error` | `catch (error)` block           |
+Đi sâu vào cấu trúc mã nguồn để "vét" các điểm mù (lỗi CSDL, nullish fallback).
+
+| Test Case ID                | Mục tiêu phủ Code Coverage (Structural Target)                           | Kỹ thuật sử dụng   | Code Branch nhắm tới  |
+| :-------------------------- | :----------------------------------------------------------------------- | :----------------- | :-------------------- |
+| **TC_ORD_ADD_12**           | Phủ vòng lặp `.map` khi tham chiếu User trong CSDL bị rỗng.              | Mock DB Response   | Nullish Fallback      |
+| **TC_ORD_ADD_13**           | Phủ toán tử `?? 0` khi DB bị khuyết trường `finalPrice` (Admin).         | Mock DB Response   | Logical Fallback `??` |
+| **TC_ORD_ADD_15**           | Ép DB trả về `{ modifiedCount: 0 }` để mô phỏng lỗi Concurrency.         | Mock `updateOne`   | `modifiedCount === 0` |
+| **TC_ORD_ADD_16**           | Phủ lỗi cấu trúc khi biến ID là chuỗi thay vì instance `ObjectId`.       | Pass string type   | Data Type Casting     |
+| **TC_ORD_ADD_21**           | Phủ toán tử `?? 0` khi DB bị khuyết trường price (User).                 | Mock DB Response   | Logical Fallback `??` |
+| **TC_ORD_ADD_23**           | Phủ logic chuẩn hóa (normalize) thuộc tính `status` dạng String.         | Pass string        | `typeof === 'string'` |
+| **TC_ORD_ADD_24**           | Phủ logic chuẩn hóa `status` ở định dạng Value Object.                   | Pass object        | `status.value`        |
+| **TC_ORD_ADD_25**           | Phủ logic mặc định biến `status` lạ về giá trị `'pending'`.              | Pass unknown type  | Switch-case Default   |
+| **TC_ORD_ADD_33_CATCH_ERR** | Kích hoạt toàn bộ khối `catch(error)` ném ra lỗi 500 do DB ngắt kết nối. | Mock `throw Error` | `catch (error)` block |
 
 ---
 
-## 🟢 PHẦN 2: PHÂN TÍCH ĐỘ BAO PHỦ VÀ CFG
+## 🟢 PHẦN 2: PHÂN TÍCH ĐỒ THỊ DÒNG ĐIỀU KHIỂN & CÂU HỎI ĐỊNH LƯỢNG
 
-### 1. Phân tích Đồ thị Dòng điều khiển (Control Flow Graph - CFG)
-
-#### A. Đồ thị CFG cho hàm `deleteOrder` (Client User)
-
-Xem xét luồng thực thi hàm `deleteOrder` (Dòng 267 - 310):
+### 2.1. Đồ thị CFG cho hàm `deleteOrder`
 
 ```mermaid
 flowchart TD
@@ -137,78 +131,76 @@ flowchart TD
     N6 -. "Exception" .-> N14
 ```
 
-- **Tính toán độ phức tạp Cyclomatic $V(G)$ cho `deleteOrder`**:
-  - Số nút điều kiện (Predicate nodes): $P = 5$ (Node 1, Node 4, Node 7, Node 9, Node 11) + 1 Exception handler = $6$.
-  - Theo công thức: $V(G) = P + 1 = 6 + 1 = 7$
-  - Tất cả các **Basis Paths** này đã được kích hoạt hoàn toàn bằng các Test Cases (TC_ORD_03, 04, 05, 06, ADD_27, ADD_28, ADD_32_UNAUTH, ADD_33).
+- **Độ phức tạp Cyclomatic $V(G)$**: $P = 5$ (Node 1, 4, 7, 9, 11) + 1 Exception handler = 6. Vậy $V(G) = 6 + 1 = 7$.
 
 ---
 
-### 2. Số lượng Test Case tối ưu cho 100% Statement Coverage
+### 2.2. Định lượng cho 100% Statement Coverage
 
-Để đạt **100% Statement Coverage** cho toàn bộ 6 handler thuộc module Order trong [`order.controller.ts`](file:///d:/admin/e-commerce-web/be/src/controllers/order.controller.ts), số lượng test case bắt buộc phải chạy là **15 Test Cases cốt lõi**.
+**Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Statement Coverage?
 
-Hiện tại, file [`order.test.ts`](file:///d:/admin/e-commerce-web/be/src/tests/order.test.ts) đã triển khai toàn bộ **33 Test Cases**, chính thức đạt **100% Statement Coverage** trên toàn bộ `order.controller.ts`. Mọi dòng code nghiệp vụ đã được thực thi ít nhất một lần.
+**Trả lời:** Mặc dù ta đã tạo 33 Test Case, nhưng để phủ kín 100% Statement của toàn bộ file `order.controller.ts`, ta cần lọc ra đúng **14 Test Cases Tối Thiểu (Minimal Statement Set)**:
 
-| STT | Test Case ID      | Hàm mục tiêu          | Mục đích bao phủ Statement                                      |
-| :-: | :---------------- | :-------------------- | :-------------------------------------------------------------- |
-|  1  | **TC_ORD_02**     | `getOrderForAdmin`    | Phủ luồng Admin lấy danh sách phân trang đơn hàng               |
-|  2  | **TC_ORD_ADD_11** | `getOrderForAdmin`    | Phủ luồng map thông tin chi tiết khách hàng từ `userCollection` |
-|  3  | **TC_ORD_10**     | `updateOrderForAdmin` | Phủ nhánh từ chối khi `status` không thuộc Enum                 |
-|  4  | **TC_ORD_ADD_14** | `updateOrderForAdmin` | Phủ nhánh 404 khi không tìm thấy đơn hàng cần update            |
-|  5  | **TC_ORD_08**     | `updateOrderForAdmin` | Phủ nhánh chặn chuyển ngược từ `success` sang `pending`         |
-|  6  | **TC_ORD_07**     | `updateOrderForAdmin` | Phủ luồng Admin cập nhật trạng thái đơn thành công              |
-|  7  | **TC_ORD_ADD_15** | `updateOrderForAdmin` | Phủ nhánh báo lỗi khi `modifiedCount === 0` (Whitebox)          |
-|  8  | **TC_ORD_ADD_17** | `deleteOrderForAdmin` | Phủ luồng Admin xóa đơn hàng thành công theo ID                 |
-|  9  | **TC_ORD_ADD_19** | `getAllOrders`        | Phủ luồng User lấy danh sách đơn của mình có filter `status`    |
-| 10  | **TC_ORD_ADD_22** | `getOrderById`        | Phủ luồng lấy chi tiết 1 đơn hàng theo ID và chuẩn hóa status   |
-| 11  | **TC_ORD_ADD_27** | `deleteOrder`         | Phủ nhánh kiểm tra sai định dạng ObjectId (`!ObjectId.isValid`) |
-| 12  | **TC_ORD_03**     | `deleteOrder`         | Phủ nhánh Ownership Guard khi User A xóa đơn của User B         |
-| 13  | **TC_ORD_05**     | `deleteOrder`         | Phủ nhánh từ chối xóa khi đơn không ở trạng thái `pending`      |
-| 14  | **TC_ORD_04**     | `deleteOrder`         | Phủ luồng User xóa đơn của mình thành công khi `pending`        |
-| 15  | **TC_ORD_ADD_33** | Toàn Controller       | Phủ các khối `catch (error)` ném lỗi 500 bằng Mock DB Reject    |
+1. **TC_ORD_01, TC_ORD_02**: Phủ dòng lệnh kiểm tra Auth (Admin Guard Middleware).
+2. **TC_ORD_04, TC_ORD_07**: Phủ các dòng lệnh ghi CSDL thành công (Happy Paths của Delete và Update).
+3. **TC_ORD_03, TC_ORD_05, TC_ORD_10, TC_ORD_ADD_27**: Phủ các dòng lệnh báo lỗi nghiệp vụ cơ bản (Validation, Enum, Chặn xóa đơn Active, Chặn IDOR).
+4. **TC_ORD_ADD_11, TC_ORD_ADD_19, TC_ORD_ADD_22**: Phủ các dòng lệnh truy vấn dữ liệu (GET list phân trang, GET filter, GET chi tiết).
+5. **TC_ORD_ADD_14, TC_ORD_ADD_28**: Phủ các dòng lệnh Not Found 404 (Khi DB trả về rỗng).
+6. **TC_ORD_ADD_33_CATCH_ERR (Whitebox)**: Bắt buộc phải có để phủ lệnh `catch(error)` (Block 500).
+
+_(Nếu thiếu 1 trong 14 case này, Statement Coverage sẽ không thể đạt 100%)._
 
 ---
 
-### 3. Ma trận 100% Branch Coverage (Decision Coverage)
+### 2.3. Định lượng cho 100% Branch Coverage
 
-Để đạt **100% Branch Coverage**, mọi cấu trúc rẽ nhánh điều kiện logic (`if/else`, toán tử `||`, `&&`) đã được kích hoạt cả hai trạng thái `True` và `False` thông qua tổ hợp 33 Test Cases. Các điểm mù toán tử cũng đã được quét sạch.
+**Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Branch Coverage?
 
-| Vị trí điều kiện rẽ nhánh trong Code                  | Nhánh True (T)                                    | Nhánh False (F)                                | Test Case kích hoạt True | Test Case kích hoạt False |
-| :---------------------------------------------------- | :------------------------------------------------ | :--------------------------------------------- | :----------------------- | :------------------------ |
-| `req.user?.role !== "admin"` (Auth Guard)             | Không phải Admin $\to$ 403 `FORBIDDEN_ADMIN_ONLY` | Là Admin $\to$ Cho phép đi tiếp vào route      | **TC_ORD_01**            | **TC_ORD_02**             |
-| `!validStatuses.includes(status)` (Enum Guard)        | Status không hợp lệ $\to$ 400 `INVALID_STATUS`    | Status hợp lệ $\to$ Tiếp tục xử lý update      | **TC_ORD_10**            | **TC_ORD_07**             |
-| `if (!order)` (Check Exist)                           | Đơn không tồn tại $\to$ 404                       | Đơn tồn tại $\to$ Tiếp tục xử lý               | **TC_ORD_ADD_14**        | **TC_ORD_07**             |
-| **`(success \|\| failed) && status == 'pending'`**    | **Chuyển ngược trạng thái $\to$ Chặn 400**        | **Chuyển trạng thái hợp lệ $\to$ Cho phép**    | **TC_ORD_08, 09**        | **TC_ORD_07**             |
-| `if (result.modifiedCount === 0)` (Concurrency Guard) | Lỗi ghi CSDL $\to$ Báo lỗi 400                    | Ghi đè DB thành công $\to$ 200 OK              | **TC_ORD_ADD_15**        | **TC_ORD_07**             |
-| `order.userId !== userId` (IDOR Guard)                | **Đơn của người khác $\to$ Chặn 403**             | **Đơn của chính mình $\to$ Kiểm tra tiếp**     | **TC_ORD_03**            | **TC_ORD_04**             |
-| `order.status !== "pending"` (Delete Guard)           | **Đang giao/Thành công $\to$ Chặn 400**           | **Đang chờ duyệt (`pending`) $\to$ Xóa**       | **TC_ORD_05, 06**        | **TC_ORD_04**             |
-| Toán tử `?? 0` (Fallback giá tiền)                    | Thuộc tính price bị thiếu $\to$ Gán = 0           | Thuộc tính price tồn tại $\to$ Dùng giá trị cũ | **TC_ORD_ADD_13, 21**    | **TC_ORD_02**             |
+**Trả lời:** Branch Coverage đòi hỏi khắt khe hơn: mọi câu lệnh rẽ nhánh (`if`, `||`, `??`) phải được chạy cả nhánh True và False. Ta cần chạy **18 Test Cases** (Bao gồm 14 test của Statement Coverage + 4 test bổ sung):
+
+**Bổ sung 4 Test Cases (Minimal Branch Set):**
+
+1. **TC_ORD_08 (Blackbox)**: Bẻ nhánh True của câu lệnh cấm chuyển ngược trạng thái `if ((success || failed) && status == 'pending')`.
+2. **TC_ORD_ADD_13, TC_ORD_ADD_21 (Whitebox)**: Bẻ nhánh True của toán tử Fallback logic `order.finalPrice ?? 0` khi DB bị khuyết dữ liệu.
+3. **TC_ORD_ADD_15 (Whitebox)**: Bẻ nhánh True của lỗi Concurrency `if (modifiedCount === 0)` khi ghi đè DB thất bại.
 
 ---
 
-## 🟢 PHẦN 3: ĐÁNH GIÁ ĐỘ PHÙ HỢP CỦA PHƯƠNG PHÁP (METHODOLOGY EVALUATION)
+## 🟢 PHẦN 3: TƯ DUY ĐÁNH GIÁ PHƯƠNG PHÁP LUẬN (METHODOLOGY EVALUATION)
 
-### 1. Tại sao phải kết hợp cả Blackbox và Whitebox?
+_Mục tiêu: Đánh giá xem áp dụng phương pháp BVA/EP có tự động đảm bảo 100% độ phủ Statement/Branch hay không, và xem bộ test đó có thừa/thiếu gì khi map sang cấu trúc code._
 
-1. **Blackbox (Đóng vai User/Hacker ngoài đời thực)**:
-   - Các kịch bản Blackbox thiết lập tư duy theo hướng "Nếu tôi cố tình thay đổi ID trên URL thì sao?" (IDOR Guard), "Nếu tôi cứ gửi API đòi hủy đơn khi hàng đang giao thì sao?" (State Machine Guard).
-   - Nó đảm bảo hệ thống chặn đứng mọi nỗ lực khai thác, thể hiện qua các mã lỗi trả về chuẩn xác (403, 400).
-2. **Whitebox (Vét sạch các ngõ ngách kỹ thuật)**:
-   - Có những nhánh code mà user bình thường không bao giờ chạm tới được (Ví dụ: DB MongoDB tự nhiên gặp lỗi timeout sinh ra 500 `catch (error)`, hoặc 2 admin cùng update 1 đơn hàng dẫn đến `modifiedCount === 0`).
-   - Whitebox sử dụng kỹ thuật **Jest Mocking** để can thiệp vào RAM, ép CSDL phải giả lập lỗi ngay tức thì mà không cần phải tắt server thật. Nhờ đó, 9 Test Case Whitebox đã lấp đầy 100% các dòng code ẩn sâu nhất.
+### 3.1. Sự thật: BVA/EP có tự động đảm bảo 100% Coverage không?
 
-### 2. Kết luận của QA Lead về Độ sẵn sàng của Module Order (Sign-off Recommendation)
+**Kết luận khẳng định: HOÀN TOÀN KHÔNG!**
 
-1. **Tổng hợp Kết quả Kiểm thử Tự động**:
-   - **Tỷ lệ Pass**: **33/33 Test Cases PASSED** ($100\%$ Pass Rate).
-   - **Tốc độ thực thi**: Cực nhanh (~2 giây), toàn bộ bộ test khổng lồ được chạy mượt mà mà không gặp lỗi nghẽn cổ chai.
-   - **Độ tin cậy bảo mật**: Đạt chứng nhận bảo vệ vững chắc trước hai lỗ hổng OWASP hàng đầu là **BOLA/IDOR** và **Broken Access Control**.
+Phương pháp BVA/EP hoàn toàn dựa trên tư duy **Hộp Đen (Blackbox)** - nhìn vào tài liệu đặc tả (Specs) để thiết kế kịch bản. Khi đem bộ 24 test case Blackbox ốp vào chạy trên Source Code, độ phủ thường bị kẹt ở mức **75% - 85%**. Lý do là phương pháp này gặp phải vấn đề **vừa Thừa lại vừa Thiếu** khi ánh xạ vào kiến trúc nội bộ của lập trình viên.
 
-2. **Hành động đã hoàn thành (Completed Action Items)**:
-   - **Phủ kín Test Suite**: Đã rà soát và viết bổ sung toàn bộ các test cases còn thiếu, phân tách rõ ràng 24 test chức năng (Blackbox) và 9 test cấu trúc (Whitebox).
-   - **Coverage tuyệt đối**: Đạt mốc **100% Coverage** toàn vẹn cho Statements, Branches, Functions và Lines.
-   - **Tạo Postman Collection**: Đã xuất thành công bộ sưu tập Postman chuẩn gồm 18 Test Cases Black Box phục vụ test tay độc lập với đầy đủ biến và test script.
+### 3.2. Đánh giá "Cái THIẾU" của BVA/EP khi map sang Code
 
-3. **Đánh giá Nghiệm thu (Sign-off Verdict)**:  
-   Module **Order Lifecycle Management** không chỉ đạt tiêu chuẩn nghiệp vụ và bảo mật mà còn sở hữu một bộ giáp Unit Test 100% hoàn hảo. Hệ thống chính thức được đánh giá **FULLY PRODUCTION-READY (SẴN SÀNG RELEASE LÊN MÔI TRƯỜNG THỰC TẾ)**.
+Bộ BVA/EP được thiết kế dưới giả định "Hạ tầng lý tưởng" nên không thể kích hoạt được các logic phòng ngự (Defensive Programming) do Developer viết ra:
+
+- **Thiếu nhánh Catch Block (Lỗi hạ tầng):** Kịch bản BVA/EP mong đợi nhập input sai thì HTTP trả về 400. Nhưng không có tài liệu BA nào yêu cầu: _"Làm sập kết nối MongoDB đột ngột để sinh ra HTTP 500"_. Do đó, lệnh rẽ nhánh `catch(error)` mãi mãi bị bỏ sót.
+- **Thiếu nhánh Fallback dữ liệu ngầm:** Trong code có nhánh `order.finalPrice ?? 0` để đề phòng DB cũ bị khuyết dữ liệu. Kịch bản BVA không bao giờ kích hoạt được luồng True của nhánh này vì giả định DB luôn hoàn hảo.
+- **Thiếu nhánh Race Condition:** BVA/EP không thể thiết kế được kịch bản mô phỏng 2 Admin cùng lúc nhấn nút cập nhật 1 đơn hàng (`modifiedCount === 0`).
+
+$\implies$ **Giải pháp bù đắp**: Bắt buộc phải kết hợp **Whitebox Testing** (Sử dụng Mocking Data & Throw Error trong RAM) để chọc thẳng vào các điểm mù kỹ thuật này.
+
+### 3.3. Đánh giá "Cái THỪA" của BVA/EP khi map sang Code
+
+Ngược lại, khi map sang cấu trúc mã nguồn, bộ test BVA/EP lại sinh ra sự **Thừa thãi (Redundant)** và trùng lặp (Overlap):
+
+- **Ví dụ kinh điển:** Dựa trên phân tích State Machine (EP), QA viết 2 Test Cases Hộp đen cho quy tắc "Không được chuyển ngược trạng thái":
+  - Kịch bản 1 (TC_08): Cố chuyển từ `success` -> `pending` (Báo 400).
+  - Kịch bản 2 (TC_09): Cố chuyển từ `failed` -> `pending` (Báo 400).
+- **Phân tích dưới góc nhìn Code (Whitebox):** Ở dưới backend, Developer gộp chung hai trường hợp đó vào đúng 1 dòng if duy nhất:
+  `if (["success", "failed"].includes(order.status)) return res.status(400)`
+- **Hậu quả:** Khi chạy Kịch bản 1, nhánh code trên đã đạt 100% Coverage. Khi chạy tiếp Kịch bản 2, Kịch bản 2 trở nên **thừa thãi hoàn toàn** về mặt độ phủ code. Đây là minh chứng cho việc số lượng Test Case Hộp đen lớn chưa chắc đã mang lại hiệu quả đo lường cao hơn.
+
+### 3.4. Tổng kết Triết lý Kiểm thử
+
+Qua việc thực nghiệm trên module Order, có thể rút ra kết luận cốt lõi:
+
+1. **BVA/EP (Blackbox) là ĐIỀU KIỆN CẦN**: Cực kỳ thiết yếu để đảm bảo phần mềm chạy đúng nghiệp vụ kinh doanh, bảo vệ an toàn cho User. Tuy nhiên, nó là chưa đủ vì bỏ lọt điểm mù hạ tầng.
+2. **Structural Testing (Whitebox) là ĐIỀU KIỆN ĐỦ**: Đóng vai trò "chiếc chổi" quét sạch các "góc tối" của mã nguồn (nhánh catch, toán tử dự phòng), nhưng lại xa rời hành vi của User thật.
+3. $\implies$ **Phương pháp toàn vẹn nhất**: Lấy **BVA/EP làm bộ khung xương sống** (tạo base case), sau đó dùng công cụ đo lường Coverage soi chiếu vào Code để phát hiện điểm mù, và cuối cùng dùng **Whitebox lấp đầy cái thiếu, cắt tỉa cái thừa**. Sự đan xen này chính là nghệ thuật tạo nên bộ Unit Test đạt mức tuyệt đối 100% Coverage nhưng vẫn tinh gọn.
