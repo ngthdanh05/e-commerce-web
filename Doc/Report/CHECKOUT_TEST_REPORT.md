@@ -8,7 +8,7 @@
 
 | Tham số đầu vào | Ràng buộc nghiệp vụ & Schema Zod | Phân vùng hợp lệ (Valid EP) | Phân vùng không hợp lệ (Invalid EP) |
 | :--- | :--- | :--- | :--- |
-| **`shippingInfo.phoneNumber`** | Chuỗi 10 chữ số, bắt đầu bằng các đầu số viễn thông Việt Nam chuẩn: `^(03\|05\|07\|08\|09)[0-9]{8}$`. | • **EP-V1**: Chuỗi đúng 10 số với đầu số hợp lệ (vd: `"0912345678"`, `"0987654321"`, `"0381234567"`). | • **EP-I1**: Độ dài < 10 chữ số.<br>• **EP-I2**: Độ dài > 10 chữ số.<br>• **EP-I3**: Đúng 10 chữ số nhưng sai đầu số (vd: `"0123456789"`).<br>• **EP-I4**: Chứa ký tự chữ hoặc ký tự đặc biệt. |
+| **`shippingInfo.phoneNumber`** | Chuỗi 10 chữ số, bắt đầu bằng các đầu số viễn thông Việt Nam chuẩn: `^(03\\\|05\\\|07\\\|08\\\|09)[0-9]{8}$`. | • **EP-V1**: Chuỗi đúng 10 số với đầu số hợp lệ (vd: `"0912345678"`, `"0987654321"`, `"0381234567"`). | • **EP-I1**: Độ dài < 10 chữ số.<br>• **EP-I2**: Độ dài > 10 chữ số.<br>• **EP-I3**: Đúng 10 chữ số nhưng sai đầu số (vd: `"0123456789"`).<br>• **EP-I4**: Chứa ký tự chữ hoặc ký tự đặc biệt. |
 | **`shippingInfo.address`** | Chuỗi địa chỉ có độ dài từ 10 đến 200 ký tự. | • **EP-V2**: Chuỗi có độ dài `[10, 200]`. | • **EP-I5**: Bỏ trống hoặc độ dài < 10 (`ADDRESS_TOO_SHORT`).<br>• **EP-I6**: Độ dài > 200 (`ADDRESS_TOO_LONG`). |
 | **`shippingInfo.fullName`** | Chuỗi họ tên có độ dài `[1, 100]`. | • **EP-V3**: Chuỗi `1 <= length <= 100`. | • **EP-I7**: Chuỗi rỗng.<br>• **EP-I8**: Vượt quá 100 ký tự. |
 | **`shippingInfo.email`** | Chuỗi email hợp lệ. | • **EP-V4**: Email đúng định dạng (vd: `"test@example.com"`). | • **EP-I9**: Email sai định dạng (`INVALID_EMAIL`). |
@@ -34,35 +34,35 @@ Trong `checkout.controller.ts`, module phân tách hai luồng thanh toán dựa
 
 ```mermaid
 flowchart TD
-    StartCheck["POST /api/checkout"] --> ValidateSchema{"1. Zod validate(req.body)"}
+StartCheck["POST /api/checkout"] --> ValidateSchema{"1. Zod validate(req.body)"}
 
-    ValidateSchema -- "Invalid" --> Err400["Return 400 validation error"]
+ValidateSchema -- "Invalid" --> Err400["Return 400 validation error"]
 
-    ValidateSchema -- "Valid" --> FindCart["2. Tìm Cart theo userId"]
+ValidateSchema -- "Valid" --> FindCart["2. Tìm Cart theo userId"]
 
-    FindCart --> CartExists{"3. Cart tồn tại?"}
+FindCart --> CartExists{"3. Cart tồn tại?"}
 
-    CartExists -- "No" --> ErrCart1["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
+CartExists -- "No" --> ErrCart1["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
 
-    CartExists -- "Yes" --> CheckCart{"4. products hợp lệ và totalPrice > 0?"}
+CartExists -- "Yes" --> CheckCart{"4. products hợp lệ và totalPrice > 0?"}
 
-    CheckCart -- "No" --> ErrCart2["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
+CheckCart -- "No" --> ErrCart2["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
 
-    CheckCart -- "Yes" --> GenOrderID["5. orderId = generatePayID()"]
+CheckCart -- "Yes" --> GenOrderID["5. orderId = generatePayID()"]
 
-    GenOrderID --> PaymentBranch{"6. typePayment?"}
+GenOrderID --> PaymentBranch{"6. typePayment?"}
 
-    PaymentBranch -- "cod" --> COD_DB["Insert checkout pending<br/>Insert order pending<br/>Reset Cart"]
+PaymentBranch -- "cod" --> COD_DB["Insert checkout pending<br/>Insert order pending<br/>Reset Cart"]
 
-    COD_DB --> COD_Res["Return 200 COD success"]
+COD_DB --> COD_Res["Return 200 COD success"]
 
-    PaymentBranch -- "vnpay" --> VNP_DB["Insert checkout<br/>Insert order<br/>Update checkout success"]
+PaymentBranch -- "vnpay" --> VNP_DB["Insert checkout<br/>Insert order<br/>Update checkout success"]
 
-    VNP_DB --> VNP_GenURL["Init VNPay SDK<br/>buildPaymentUrl(...)"]
+VNP_DB --> VNP_GenURL["Init VNPay SDK<br/>buildPaymentUrl(...)"]
 
-    VNP_GenURL --> VNP_Res["Return 200 paymentUrl"]
+VNP_GenURL --> VNP_Res["Return 200 paymentUrl"]
 
-    PaymentBranch -- "Other<br/>(White-box mocked)" --> InvalidPayment["Return 400 Loại thanh toán không hợp lệ"]
+PaymentBranch -- "Other<br/>(White-box mocked)" --> InvalidPayment["Return 400 Loại thanh toán không hợp lệ"]
 ```
 
 #### A. Luồng Thanh toán Tiền mặt khi nhận hàng (`typePayment = "cod"`)
@@ -70,51 +70,51 @@ flowchart TD
 1. **Kiểm tra dữ liệu đầu vào**: `checkoutSchema.safeParse(req.body)` phải thành công.
 
 2. **Kiểm tra giỏ hàng**:
-   - Cart phải tồn tại.
-   - `products` phải là Array.
-   - `products.length > 0`.
-   - `totalPrice > 0`.
+- Cart phải tồn tại.
+- `products` phải là Array.
+- `products.length > 0`.
+- `totalPrice > 0`.
 
 3. **Sinh mã giao dịch**:
-   - Hàm `generatePayID()` sử dụng timestamp, giây và mili-giây.
+- Hàm `generatePayID()` sử dụng timestamp, giây và mili-giây.
 
 4. **Tạo dữ liệu đơn hàng**:
-   - `orderId`.
-   - `userId`.
-   - `products`.
-   - `finalPrice`.
-   - `shippingInfo`.
-   - `paymentMethod`.
-   - `status: "pending"`.
+- `orderId`.
+- `userId`.
+- `products`.
+- `finalPrice`.
+- `shippingInfo`.
+- `paymentMethod`.
+- `status: "pending"`.
 
 5. **Lưu CSDL**:
-   - Insert vào `checkouts`.
-   - Insert vào `orders`.
+- Insert vào `checkouts`.
+- Insert vào `orders`.
 
 6. **Reset Cart**:
-   - `cartCol.updateOne({ userId }, { $set: emptyCart() })`.
+- `cartCol.updateOne({ userId }, { $set: emptyCart() })`.
 
 7. **Phản hồi**:
-   - HTTP 200.
-   - `success: true`.
-   - Trả `orderId` và metadata.
+- HTTP 200.
+- `success: true`.
+- Trả `orderId` và metadata.
 
 #### B. Luồng Cổng thanh toán VNPay Sandbox (`typePayment = "vnpay"`)
 
 1. **Khởi tạo dữ liệu giao dịch**:
-   - Insert checkout.
-   - Insert order.
-   - Cập nhật trạng thái checkout.
+- Insert checkout.
+- Insert order.
+- Cập nhật trạng thái checkout.
 
 2. **Khởi tạo VNPay SDK**:
 
 ```typescript
 const vnpay = new VNPay({
-  tmnCode: process.env.VNPAY_TMN_CODE!,
-  secureSecret: process.env.VNPAY_SECURE_SECRET!,
-  vnpayHost: process.env.VNPAY_HOST!,
-  testMode: true,
-  loggerFn: ignoreLogger,
+tmnCode: process.env.VNPAY_TMN_CODE!,
+secureSecret: process.env.VNPAY_SECURE_SECRET!,
+vnpayHost: process.env.VNPAY_HOST!,
+testMode: true,
+loggerFn: ignoreLogger,
 });
 ```
 
@@ -130,8 +130,8 @@ Các trường chính:
 - `vnp_ExpireDate`: thời hạn thanh toán.
 
 4. **Phản hồi**:
-   - HTTP 200.
-   - Trả `paymentUrl` để client redirect sang VNPay.
+- HTTP 200.
+- Trả `paymentUrl` để client redirect sang VNPay.
 
 ---
 
@@ -144,83 +144,83 @@ Endpoint `GET /api/checkout/vnpay-callback` tiếp nhận kết quả trả về
 Để chống **Parameter Tampering**, controller thực hiện:
 
 1. **Đọc Secret Key**:
-   - `VNPAY_SECURE_SECRET`.
-   - Fallback `VNP_HASHSECRET`.
-   - Nếu cả hai không tồn tại → HTTP 500 `VNPAY_SECRET_NOT_CONFIGURED`.
+- `VNPAY_SECURE_SECRET`.
+- Fallback `VNP_HASHSECRET`.
+- Nếu cả hai không tồn tại → HTTP 500 `VNPAY_SECRET_NOT_CONFIGURED`.
 
 2. **Lọc tham số**:
-   - Loại `vnp_SecureHash`.
-   - Loại `vnp_SecureHashType`.
+- Loại `vnp_SecureHash`.
+- Loại `vnp_SecureHashType`.
 
 3. **Chỉ giữ các query có kiểu String**:
 
 ```typescript
 if (typeof value === "string") {
-  cloned[key] = value;
+cloned[key] = value;
 }
 ```
 
 4. **Sắp xếp key theo thứ tự từ điển**.
 
 5. **Tạo Signing String**:
-   - `key1=value1&key2=value2&...`
+- `key1=value1&key2=value2&...`
 
 6. **Tính HMAC-SHA512**:
 
 ```typescript
 const signData = crypto
-  .createHmac("sha512", tmnSecret)
-  .update(Buffer.from(sorted, "utf-8"))
-  .digest("hex");
+.createHmac("sha512", tmnSecret)
+.update(Buffer.from(sorted, "utf-8"))
+.digest("hex");
 ```
 
 7. **So sánh chữ ký**:
 
 ```typescript
 if (
-  !secureHash ||
-  secureHash.toLowerCase() !== signData.toLowerCase()
+!secureHash ||
+secureHash.toLowerCase() !== signData.toLowerCase()
 ) {
-  return res.status(400).json({
-    success: false,
-    errors: [{ message: "INVALID_CHECKSUM" }],
-  });
+return res.status(400).json({
+success: false,
+errors: [{ message: "INVALID_CHECKSUM" }],
+});
 }
 ```
 
 8. **Tìm Order**:
-   - Không tồn tại → HTTP 404.
+- Không tồn tại → HTTP 404.
 
 9. **Kiểm tra `vnp_ResponseCode`**:
-   - `"00"` → Success.
-   - Khác `"00"` → Failed.
+- `"00"` → Success.
+- Khác `"00"` → Failed.
 
 #### B. Hai kịch bản kiểm thử bảo mật thực tế
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor Attacker as Attacker / VNPay
-    participant Server as Express Server (vnpayCallback)
-    participant DB as MongoDB (checkouts, carts)
+autonumber
+actor Attacker as Attacker / VNPay
+participant Server as Express Server (vnpayCallback)
+participant DB as MongoDB (checkouts, carts)
 
-    rect rgb(40, 44, 52)
-        Note over Attacker, DB: Kịch bản 1: Giả mạo chữ ký (Tampered Hash)
-        Attacker->>Server: GET /vnpay-callback?vnp_ResponseCode=00&vnp_SecureHash=INVALID_HASH
-        Server->>Server: Tính lại HMAC-SHA512 từ secret key
-        Server-->>Attacker: 400 INVALID_CHECKSUM
-        Note right of Server: Không cập nhật Database
-    end
+rect rgb(40, 44, 52)
+Note over Attacker, DB: Kịch bản 1: Giả mạo chữ ký (Tampered Hash)
+Attacker->>Server: GET /vnpay-callback?vnp_ResponseCode=00&vnp_SecureHash=INVALID_HASH
+Server->>Server: Tính lại HMAC-SHA512 từ secret key
+Server-->>Attacker: 400 INVALID_CHECKSUM
+Note right of Server: Không cập nhật Database
+end
 
-    rect rgb(30, 50, 40)
-        Note over Attacker, DB: Kịch bản 2: Chữ ký hợp lệ & thành công
-        Attacker->>Server: GET /vnpay-callback?...&vnp_ResponseCode=00&vnp_SecureHash=VALID_HASH
-        Server->>Server: So sánh signData và secureHash
-        Server->>DB: findOne({ orderId })
-        Server->>DB: updateOne status = success
-        Server->>DB: deleteOne + insertOne Empty Cart
-        Server-->>Attacker: 302 Redirect checkout-success
-    end
+rect rgb(30, 50, 40)
+Note over Attacker, DB: Kịch bản 2: Chữ ký hợp lệ & thành công
+Attacker->>Server: GET /vnpay-callback?...&vnp_ResponseCode=00&vnp_SecureHash=VALID_HASH
+Server->>Server: So sánh signData và secureHash
+Server->>DB: findOne({ orderId })
+Server->>DB: updateOne status = success
+Server->>DB: deleteOne + insertOne Empty Cart
+Server-->>Attacker: 302 Redirect checkout-success
+end
 ```
 
 #### C. Các kịch bản Callback bổ sung trong White-box Testing
@@ -264,24 +264,42 @@ Bộ test hiện tại trong `checkout.test.ts` gồm **25 test cases**, trong �
 | 21 | `TC_CHECKOUT_EXTRA_19` | White-box / Cart Guard | `products` không phải Array | PASS |
 | 22 | `TC_CHECKOUT_EXTRA_20` | White-box / Cart Guard | Có products nhưng `totalPrice = 0` | PASS |
 | 23 | `TC_CHECKOUT_EXTRA_21` | White-box / Mock Schema | Fallback Payment Branch | PASS |
-| 24 | `TC_CHECKOUT_EXTRA_22` | White-box / Logical Branch | `cart.products || []` fallback | PASS |
-| 25 | `TC_CHECKOUT_EXTRA_23` | White-box / Logical Branch | `req.ip || "127.0.0.1"` fallback | PASS |
+| 24 | `TC_CHECKOUT_EXTRA_22` | White-box / Logical Branch | `cart.products \|\| []` fallback | PASS |
+| 25 | `TC_CHECKOUT_EXTRA_23` | White-box / Logical Branch | `req.ip \|\| "127.0.0.1"` fallback | PASS |
 
 ---
 
-## 🟢 PHẦN 2: KIỂM THỬ API THỰC TẾ BẰNG POSTMAN
-| Test Case | Mục tiêu | Expected | Actual | Kết quả |
-|---|---|---|---|---|
-| TC_CHK_01 | Checkout COD hợp lệ | 200 | 200 | PASS |
-| TC_CHK_02 | Checkout VNPay hợp lệ | 200 + paymentUrl | 200 + paymentUrl | PASS |
-| TC_CHK_03 | Phone 9 số | 400 INVALID_PHONE_NUMBER | 400 INVALID_PHONE_NUMBER | PASS |
-| TC_CHK_04 | Address 9 ký tự | 400 ADDRESS_TOO_SHORT | 400 ADDRESS_TOO_SHORT | PASS |
-| TC_CHK_05 | Payment paypal | 400 INVALID_PAYMENT_METHOD | 400 INVALID_PAYMENT_METHOD | PASS |
-| TC_CHK_06 | Tampered VNPay Hash | 400 INVALID_CHECKSUM | 400 INVALID_CHECKSUM | PASS |
+| **## 🟢 PHẦN 2: KIỂM THỬ API THỰC TẾ BẰNG POSTMAN**
 
-Postman được sử dụng để kiểm thử Black-box/API thực tế của module Checkout. Kết quả PASS được xác định khi Actual Result khớp Expected Result, không phụ thuộc vào việc status code là 200 hay 400. Các trường hợp 400 như invalid phone, invalid payment hoặc tampered hash được xem là PASS vì hệ thống đã từ chối đúng dữ liệu không hợp lệ.
+Postman được sử dụng để kiểm thử Black-box/API thực tế của module Checkout. Một test case được xem là **PASS** khi Actual Result khớp Expected Result; vì vậy các test dữ liệu không hợp lệ trả HTTP 400 vẫn là PASS nếu hệ thống từ chối đúng theo đặc tả.
 
-## 🟢 PHẦN 3: PHÂN TÍCH ĐỘ BAO PHỦ VÀ CONTROL FLOW
+Test Case | Mục tiêu | Expected | Actual | Kết quả
+---|---|---|---|---
+`TC_CHK_01` | Empty Cart | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS
+`TC_CHK_03` | Phone hợp lệ 10 chữ số | `200` | `200` | PASS
+`TC_CHK_04` | Phone 9 chữ số | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
+`TC_CHK_05` | Phone 11 chữ số | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
+`TC_CHK_06` | Phone đúng 10 số nhưng sai prefix | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
+`TC_CHK_07` | Address 9 ký tự | `400 ADDRESS_TOO_SHORT` | `400 ADDRESS_TOO_SHORT` | PASS
+`TC_CHK_08` | Address 10 ký tự | `200` | `200` | PASS
+`TC_CHK_09` | Address 200 ký tự | `200` | `200` | PASS
+`TC_CHK_10` | Address 201 ký tự | `400 ADDRESS_TOO_LONG` | `400 ADDRESS_TOO_LONG` | PASS
+`TC_CHK_11A` | Payment Type COD hợp lệ | `200 success=true` | `200 success=true` | PASS
+`TC_CHK_11B` | Payment Type VNPay hợp lệ | `200 + paymentUrl` | `200 + paymentUrl` | PASS
+`TC_CHK_12` | Payment Type không hợp lệ (`paypal`) | `400 INVALID_PAYMENT_METHOD` | `400 INVALID_PAYMENT_METHOD` | PASS
+`TC_CHK_13` | VNPay Tampered Hash | `400 INVALID_CHECKSUM` | `400 INVALID_CHECKSUM` | PASS
+`TC_CHK_14` | VNPay Valid Hash + ResponseCode `00` | `302 Redirect checkout-success` | `302 Found` | PASS
+
+**Lưu ý về `TC_CHK_02 - Cart Not Found`:**
+
+Test case này phụ thuộc trực tiếp vào trạng thái document Cart trong MongoDB. Trong Jest, nhánh này được tái hiện ổn định bằng mock `findOne()` trả về `null`. Qua Postman thật, việc đảm bảo user hoàn toàn không có Cart document phụ thuộc dữ liệu DB nên case này được giữ ở Jest/White-box thay vì ép tái hiện thủ công.
+
+**Phân chia vai trò giữa Postman và Jest:**
+
+- **Postman:** kiểm thử API thực tế, EP/BVA, Cart Guard, COD, VNPay, Invalid Input, Tampered Hash và Valid Hash Callback.
+- **Jest/White-box:** kiểm thử DB exception, missing secret, query array, mock schema, `cart.products || []`, `req.ip || "127.0.0.1"` và các nhánh nội bộ khó tái hiện ổn định bằng HTTP request.
+
+**## 🟢 PHẦN 3: PHÂN TÍCH ĐỘ BAO PHỦ VÀ CONTROL FLOW**                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
 ### 1. Phân tích Đồ thị Dòng điều khiển (Control Flow Graph - CFG)
 
@@ -308,32 +326,32 @@ Các nút điều kiện nghiệp vụ chính:
 
 ```mermaid
 flowchart TD
-    N0(["Node 0: Bắt đầu createCheckout"]) --> N1{"Node 1: !validation.success"}
+N0(["Node 0: Bắt đầu createCheckout"]) --> N1{"Node 1: !validation.success"}
 
-    N1 -- "True" --> N2["Node 2: 400 Validation Error"]
-    N1 -- "False" --> N3["Node 3: Find Cart"]
+N1 -- "True" --> N2["Node 2: 400 Validation Error"]
+N1 -- "False" --> N3["Node 3: Find Cart"]
 
-    N3 --> N4{"Node 4: !cart"}
+N3 --> N4{"Node 4: !cart"}
 
-    N4 -- "True" --> N5["Node 5: 400 EMPTY_CART"]
-    N4 -- "False" --> N6["Node 6: totalPrice"]
+N4 -- "True" --> N5["Node 5: 400 EMPTY_CART"]
+N4 -- "False" --> N6["Node 6: totalPrice"]
 
-    N6 --> N7{"Node 7: products invalid / empty / totalPrice = 0"}
+N6 --> N7{"Node 7: products invalid / empty / totalPrice = 0"}
 
-    N7 -- "True" --> N8["Node 8: 400 EMPTY_CART"]
-    N7 -- "False" --> N9["Node 9: generatePayID + orderData"]
+N7 -- "True" --> N8["Node 8: 400 EMPTY_CART"]
+N7 -- "False" --> N9["Node 9: generatePayID + orderData"]
 
-    N9 --> N10{"Node 10: typePayment === cod"}
+N9 --> N10{"Node 10: typePayment === cod"}
 
-    N10 -- "True" --> N11["Node 11: COD -> 200"]
-    N10 -- "False" --> N12{"Node 12: typePayment === vnpay"}
+N10 -- "True" --> N11["Node 11: COD -> 200"]
+N10 -- "False" --> N12{"Node 12: typePayment === vnpay"}
 
-    N12 -- "True" --> N13["Node 13: VNPay -> 200 paymentUrl"]
-    N12 -- "False" --> N14["Node 14: Invalid Payment -> 400"]
+N12 -- "True" --> N13["Node 13: VNPay -> 200 paymentUrl"]
+N12 -- "False" --> N14["Node 14: Invalid Payment -> 400"]
 
-    N0 -. "Exception" .-> N15["Node 15: catch -> 500"]
-    N3 -. "Exception" .-> N15
-    N11 -. "Exception" .-> N15
+N0 -. "Exception" .-> N15["Node 15: catch -> 500"]
+N3 -. "Exception" .-> N15
+N11 -. "Exception" .-> N15
 ```
 
 **Lưu ý quan trọng về Node 14:**
@@ -365,28 +383,28 @@ Các nút quan trọng:
 
 ```mermaid
 flowchart TD
-    C0(["C0: Bắt đầu vnpayCallback"]) --> C1{"C1: !tmnSecret"}
+C0(["C0: Bắt đầu vnpayCallback"]) --> C1{"C1: !tmnSecret"}
 
-    C1 -- "True" --> C2["C2: 500 SECRET_NOT_CONFIGURED"]
-    C1 -- "False" --> C3["C3: Filter + Sort + HMAC-SHA512"]
+C1 -- "True" --> C2["C2: 500 SECRET_NOT_CONFIGURED"]
+C1 -- "False" --> C3["C3: Filter + Sort + HMAC-SHA512"]
 
-    C3 --> C4{"C4: !secureHash hoặc Hash mismatch"}
+C3 --> C4{"C4: !secureHash hoặc Hash mismatch"}
 
-    C4 -- "True" --> C5["C5: 400 INVALID_CHECKSUM"]
-    C4 -- "False" --> C6["C6: findOne order"]
+C4 -- "True" --> C5["C5: 400 INVALID_CHECKSUM"]
+C4 -- "False" --> C6["C6: findOne order"]
 
-    C6 --> C7{"C7: !order"}
+C6 --> C7{"C7: !order"}
 
-    C7 -- "True" --> C8["C8: 404 Order not found"]
-    C7 -- "False" --> C9["C9: Read ResponseCode"]
+C7 -- "True" --> C8["C8: 404 Order not found"]
+C7 -- "False" --> C9["C9: Read ResponseCode"]
 
-    C9 --> C10{"C10: ResponseCode === 00"}
+C9 --> C10{"C10: ResponseCode === 00"}
 
-    C10 -- "True" --> C11["C11: Success + Empty Cart + Redirect"]
-    C10 -- "False" --> C12["C12: Failed + Redirect Failure"]
+C10 -- "True" --> C11["C11: Success + Empty Cart + Redirect"]
+C10 -- "False" --> C12["C12: Failed + Redirect Failure"]
 
-    C0 -. "Exception" .-> C13["C13: catch -> 500"]
-    C6 -. "Exception" .-> C13
+C0 -. "Exception" .-> C13["C13: catch -> 500"]
+C6 -. "Exception" .-> C13
 ```
 
 ---
@@ -457,7 +475,7 @@ Mục tiêu phủ nhánh:
 
 ```typescript
 if (typeof value === "string") {
-  cloned[key] = value;
+cloned[key] = value;
 }
 ```
 
@@ -567,8 +585,8 @@ Coverage riêng `checkout.controller.ts`:
 | 10 | SecureHash hợp lệ | Đi tiếp | INVALID_CHECKSUM | `TC_CHECKOUT_VNPAY_12`, `TC_CHECKOUT_VNPAY_11` |
 | 11 | `!order` | 404 | Order tồn tại | `TC_CHECKOUT_EXTRA_14`, `TC_CHECKOUT_VNPAY_12` |
 | 12 | `vnp_ResponseCode === "00"` | Success | Failed | `TC_CHECKOUT_VNPAY_12`, `TC_CHECKOUT_EXTRA_15` |
-| 13 | `cart.products || []` | Dùng products | Fallback `[]` | Valid checkout, `TC_CHECKOUT_EXTRA_22` |
-| 14 | `req.ip || "127.0.0.1"` | Dùng IP request | Fallback localhost | VNPay request, `TC_CHECKOUT_EXTRA_23` |
+| 13 | `cart.products \|\| []` | Dùng products | Fallback `[]` | Valid checkout, `TC_CHECKOUT_EXTRA_22` |
+| 14 | `req.ip \|\| "127.0.0.1"` | Dùng IP request | Fallback localhost | VNPay request, `TC_CHECKOUT_EXTRA_23` |
 | 15 | `catch` createCheckout | 500 | Normal Flow | `TC_CHECKOUT_EXTRA_16`, các test valid |
 | 16 | `catch` vnpayCallback | 500 | Normal Flow | `TC_CHECKOUT_EXTRA_17`, các callback valid |
 
@@ -614,30 +632,30 @@ Các giá trị khác bị Schema từ chối.
 
 ```mermaid
 graph LR
-    subgraph BlindSpots ["Điểm mù của Blackbox"]
-        B1["Khó tạo Valid HMAC-SHA512"]
-        B2["Phụ thuộc VNPay Sandbox"]
-        B3["Khó ép lỗi DB"]
-        B4["Khó đi vào Payment Fallback do Zod chặn"]
-        B5["Khó tạo req.ip = undefined"]
-        B6["Khó làm cart.products thay đổi giữa các lần truy cập"]
-    end
+subgraph BlindSpots ["Điểm mù của Blackbox"]
+B1["Khó tạo Valid HMAC-SHA512"]
+B2["Phụ thuộc VNPay Sandbox"]
+B3["Khó ép lỗi DB"]
+B4["Khó đi vào Payment Fallback do Zod chặn"]
+B5["Khó tạo req.ip = undefined"]
+B6["Khó làm cart.products thay đổi giữa các lần truy cập"]
+end
 
-    subgraph Solutions ["Whitebox + Jest Mocking"]
-        W1["crypto.createHmac với Secret mock"]
-        W2["Supertest mô phỏng Callback"]
-        W3["mockRejectedValueOnce"]
-        W4["Spy checkoutSchema.safeParse"]
-        W5["Gọi trực tiếp createCheckout bằng mock Request"]
-        W6["Getter động cho cart.products"]
-    end
+subgraph Solutions ["Whitebox + Jest Mocking"]
+W1["crypto.createHmac với Secret mock"]
+W2["Supertest mô phỏng Callback"]
+W3["mockRejectedValueOnce"]
+W4["Spy checkoutSchema.safeParse"]
+W5["Gọi trực tiếp createCheckout bằng mock Request"]
+W6["Getter động cho cart.products"]
+end
 
-    B1 ==> W1
-    B2 ==> W2
-    B3 ==> W3
-    B4 ==> W4
-    B5 ==> W5
-    B6 ==> W6
+B1 ==> W1
+B2 ==> W2
+B3 ==> W3
+B4 ==> W4
+B5 ==> W5
+B6 ==> W6
 ```
 
 #### 2.1. Xác thực chữ ký HMAC-SHA512
@@ -646,9 +664,9 @@ White-box sử dụng `crypto.createHmac()` với Secret mock để tạo chữ 
 
 ```typescript
 const validHash = crypto
-  .createHmac("sha512", tmnSecret)
-  .update(Buffer.from(signData, "utf-8"))
-  .digest("hex");
+.createHmac("sha512", tmnSecret)
+.update(Buffer.from(signData, "utf-8"))
+.digest("hex");
 ```
 
 Đồng thời test Tampered Hash chủ động sử dụng chữ ký sai để xác nhận controller trả `INVALID_CHECKSUM`.
@@ -690,11 +708,11 @@ White-box giải quyết bằng:
 
 ```typescript
 jest.spyOn(checkoutSchema, "safeParse").mockReturnValueOnce({
-  success: true,
-  data: {
-    typePayment: "paypal",
-    shippingInfo: validShippingInfo,
-  },
+success: true,
+data: {
+typePayment: "paypal",
+shippingInfo: validShippingInfo,
+},
 } as any);
 ```
 
@@ -733,10 +751,10 @@ Nhờ đó Istanbul/Jest ghi nhận toàn bộ branch.
 - **Pass Rate = 100%**.
 - **0 test failed**.
 - `checkout.controller.ts` đạt:
-  - **100% Statement Coverage**.
-  - **100% Branch Coverage**.
-  - **100% Function Coverage**.
-  - **100% Line Coverage**.
+- **100% Statement Coverage**.
+- **100% Branch Coverage**.
+- **100% Function Coverage**.
+- **100% Line Coverage**.
 
 #### B. So sánh với trạng thái ban đầu
 
