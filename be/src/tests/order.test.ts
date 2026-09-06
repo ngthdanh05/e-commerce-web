@@ -279,7 +279,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
   // 4. ADDITIONAL COVERAGE TESTS FOR 100% STATEMENTS & BRANCHES
   // ============================================================================
   describe("Additional Coverage Tests", () => {
-    it("TC_ORD_ADD_01: [getOrderForAdmin] Trả về danh sách và map thông tin user", async () => {
+    it("TC_ORD_ADD_11: [getOrderForAdmin] Trả về danh sách và map thông tin user", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -313,7 +313,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.pagination).toBeDefined();
     });
 
-    it("TC_ORD_ADD_01B: [getOrderForAdmin] Trả về danh sách, có user rỗng (branch user ? ... : null)", async () => {
+    it("TC_ORD_ADD_12: [getOrderForAdmin] Trả về danh sách, có user rỗng (branch user ? ... : null)", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -337,7 +337,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.orders[0].amount).toBe(200);
     });
 
-    it("TC_ORD_ADD_01C: [getOrderForAdmin] Trả về danh sách, không có finalPrice và totalPrice -> 0", async () => {
+    it("TC_ORD_ADD_13: [getOrderForAdmin] Trả về danh sách, không có finalPrice và totalPrice -> 0", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -359,7 +359,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.orders[0].amount).toBe(0);
     });
 
-    it("TC_ORD_ADD_02: [updateOrderForAdmin] Không tìm thấy đơn hàng cần update -> Reject 404", async () => {
+    it("TC_ORD_ADD_14: [updateOrderForAdmin] Không tìm thấy đơn hàng cần update -> Reject 404", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce(null);
 
       const response = await request(app)
@@ -371,7 +371,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.error).toBe("ORDER_NOT_FOUND");
     });
 
-    it("TC_ORD_ADD_03: [updateOrderForAdmin] Cập nhật không thành công (modifiedCount === 0) -> Reject 400", async () => {
+    it("TC_ORD_ADD_15: [updateOrderForAdmin] Cập nhật không thành công (modifiedCount === 0) -> Reject 400", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         _id: validOrderId1,
         status: "pending",
@@ -387,7 +387,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.error).toBe("ORDER_NOT_UPDATED");
     });
 
-    it("TC_ORD_ADD_03B: [updateOrderForAdmin] Sử dụng orderId là string thay vì ObjectId 24 ký tự", async () => {
+    it("TC_ORD_ADD_16: [updateOrderForAdmin] Sử dụng orderId là string thay vì ObjectId 24 ký tự", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         _id: validOrderId1,
         orderId: "PAY_STRING_ID",
@@ -404,7 +404,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.success).toBe(true);
     });
 
-    it("TC_ORD_ADD_04: [deleteOrderForAdmin] Admin xóa đơn hàng thành công -> Accept 200", async () => {
+    it("TC_ORD_ADD_17: [deleteOrderForAdmin] Admin xóa đơn hàng thành công -> Accept 200", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         orderId: "PAY123",
       });
@@ -418,7 +418,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.success).toBe(true);
     });
 
-    it("TC_ORD_ADD_04_404: [deleteOrderForAdmin] Admin xóa đơn hàng không tồn tại -> 404", async () => {
+    it("TC_ORD_ADD_18: [deleteOrderForAdmin] Admin xóa đơn hàng không tồn tại -> 404", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce(null);
 
       const response = await request(app)
@@ -428,7 +428,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.status).toBe(404);
     });
 
-    it("TC_ORD_ADD_05: [getAllOrders] Lấy danh sách đơn hàng có filter status hợp lệ", async () => {
+    it("TC_ORD_ADD_19: [getAllOrders] Lấy danh sách đơn hàng có filter status hợp lệ", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -451,7 +451,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.orders.length).toBe(1);
     });
 
-    it("TC_ORD_ADD_09: [getAllOrders] Lấy danh sách đơn hàng không có status filter hoặc status không hợp lệ", async () => {
+    it("TC_ORD_ADD_20: [getAllOrders] Lấy danh sách đơn hàng không có status filter hoặc status không hợp lệ", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -471,7 +471,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.orders[0].amount).toBe(150);
     });
 
-    it("TC_ORD_ADD_09B: [getAllOrders] Đơn hàng không có finalPrice và totalPrice -> 0", async () => {
+    it("TC_ORD_ADD_21: [getAllOrders] Đơn hàng không có finalPrice và totalPrice -> 0", async () => {
       mockOrderCollection.countDocuments.mockResolvedValueOnce(1);
       mockOrderCollection.toArray.mockResolvedValueOnce([
         {
@@ -490,7 +490,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.orders[0].amount).toBe(0);
     });
 
-    it("TC_ORD_ADD_06: [getOrderById] Lấy chi tiết đơn hàng theo ID và chuẩn hóa status (state)", async () => {
+    it("TC_ORD_ADD_22: [getOrderById] Lấy chi tiết đơn hàng theo ID và chuẩn hóa status (state)", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         orderId: "PAY123",
         status: { state: "processing" },
@@ -509,7 +509,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.order.status).toBe("processing");
     });
 
-    it("TC_ORD_ADD_14: [getOrderById] Kiểm tra chuẩn hóa status - string", async () => {
+    it("TC_ORD_ADD_23: [getOrderById] Kiểm tra chuẩn hóa status - string", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         orderId: "123",
         status: "success",
@@ -522,7 +522,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.order.amount).toBe(50);
     });
 
-    it("TC_ORD_ADD_15: [getOrderById] Kiểm tra chuẩn hóa status - value object", async () => {
+    it("TC_ORD_ADD_24: [getOrderById] Kiểm tra chuẩn hóa status - value object", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         orderId: "123",
         status: { value: "failed" },
@@ -533,7 +533,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.order.status).toBe("failed");
     });
 
-    it("TC_ORD_ADD_16: [getOrderById] Kiểm tra chuẩn hóa status - unknown -> pending", async () => {
+    it("TC_ORD_ADD_25: [getOrderById] Kiểm tra chuẩn hóa status - unknown -> pending", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce({
         orderId: "123",
         status: {},
@@ -545,7 +545,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.order.amount).toBe(0);
     });
 
-    it("TC_ORD_ADD_06_404: [getOrderById] Lấy chi tiết đơn hàng theo ID không tồn tại -> 404", async () => {
+    it("TC_ORD_ADD_26: [getOrderById] Lấy chi tiết đơn hàng theo ID không tồn tại -> 404", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce(null);
 
       const response = await request(app)
@@ -555,7 +555,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.status).toBe(404);
     });
 
-    it("TC_ORD_ADD_07: [deleteOrder] Kiểm tra sai định dạng ObjectId -> Reject 400", async () => {
+    it("TC_ORD_ADD_27: [deleteOrder] Kiểm tra sai định dạng ObjectId -> Reject 400", async () => {
       const response = await request(app)
         .delete("/api/orders/invalid_id")
         .set("Authorization", normalUserToken);
@@ -564,7 +564,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.error).toBe("INVALID_ORDER_ID");
     });
 
-    it("TC_ORD_ADD_08: [deleteOrder] Không tìm thấy đơn hàng trong DB -> Reject 404", async () => {
+    it("TC_ORD_ADD_28: [deleteOrder] Không tìm thấy đơn hàng trong DB -> Reject 404", async () => {
       mockOrderCollection.findOne.mockResolvedValueOnce(null);
 
       const response = await request(app)
@@ -575,7 +575,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(response.body.error).toBe("ORDER_NOT_FOUND");
     });
 
-    it("TC_ORD_ADD_10: [createOrder] Tạo đơn hàng thành công -> 200 OK", async () => {
+    it("TC_ORD_ADD_29: [createOrder] Tạo đơn hàng thành công -> 200 OK", async () => {
       const { createOrder } = require("../controllers/order.controller");
       mockOrderCollection.insertOne = jest
         .fn()
@@ -601,7 +601,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       );
     });
 
-    it("TC_ORD_ADD_11_UNAUTH: [getAllOrders] Kiểm tra mất userId -> 401", async () => {
+    it("TC_ORD_ADD_30_UNAUTH: [getAllOrders] Kiểm tra mất userId -> 401", async () => {
       const { getAllOrders } = require("../controllers/order.controller");
       const req = {
         user: {}, // missing _id
@@ -615,7 +615,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(res.status).toHaveBeenCalledWith(401);
     });
 
-    it("TC_ORD_ADD_12_UNAUTH: [createOrder] Kiểm tra mất userId -> 400", async () => {
+    it("TC_ORD_ADD_31_UNAUTH: [createOrder] Kiểm tra mất userId -> 400", async () => {
       const { createOrder } = require("../controllers/order.controller");
       const req = {
         user: {}, // missing _id
@@ -629,7 +629,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it("TC_ORD_ADD_13_UNAUTH: [deleteOrder] Kiểm tra mất userId -> 401", async () => {
+    it("TC_ORD_ADD_32_UNAUTH: [deleteOrder] Kiểm tra mất userId -> 401", async () => {
       const { deleteOrder } = require("../controllers/order.controller");
       const req = {
         user: {}, // missing _id
@@ -643,7 +643,7 @@ describe("SCRUM - 27: Order State Machine Enforcement & Admin Control Security T
       expect(res.status).toHaveBeenCalledWith(401);
     });
 
-    it("TC_ORD_CATCH_ERR: Kiểm tra block catch(error) ném lỗi 500", async () => {
+    it("TC_ORD_ADD_33_CATCH_ERR: Kiểm tra block catch(error) ném lỗi 500", async () => {
       mockOrderCollection.find.mockImplementationOnce(() => {
         throw new Error("DB Connection Error");
       });
