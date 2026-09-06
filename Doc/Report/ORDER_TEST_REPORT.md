@@ -1,13 +1,5 @@
 # 📄 BÁO CÁO KIỂM THỬ TÍNH NĂNG ORDER LIFECYCLE MANAGEMENT
 
-## LỜI TỰA
-
-Báo cáo này được cấu trúc toàn diện để đáp ứng 3 trọng tâm:
-
-1. Thể hiện sự liên kết giữa thiết kế Hộp đen (BVA/EP) và đo lường Hộp trắng.
-2. Trả lời chính xác định lượng Test Case cho 100% Statement/Branch.
-3. Đánh giá tính phù hợp và giới hạn của phương pháp BVA/EP khi ánh xạ vào kiến trúc mã nguồn.
-
 ---
 
 ## 🟢 PHẦN 1: PHÂN TÍCH THIẾT KẾ TEST CASE (BLACKBOX & WHITEBOX)
