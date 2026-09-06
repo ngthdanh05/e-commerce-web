@@ -47,60 +47,56 @@ stateDiagram-v2
 
 ---
 
-### 1.2. Danh mục Toàn bộ 33 Test Cases (Blackbox & Whitebox Catalog)
+### 1.2. Danh mục Toàn bộ 33 Test Cases (Test Suite Catalog)
 
-Để đạt độ phủ tuyệt đối 100%, chiến lược chia làm 2 phương pháp:
+_(Được chuẩn hóa theo format ma trận kỹ thuật, hiển thị rõ Kỹ thuật thiết kế, Input Payload và DB Assertion)_
 
-#### A. Phân hệ Blackbox Testing (Kiểm thử chức năng API)
+#### Bảng 1.2a: Phân hệ Blackbox Testing (Kiểm thử chức năng API - 24 TCs)
 
-Tập trung kiểm tra Status Code, chặn lỗi phân quyền và luồng State Machine (giống thao tác HTTP thực tế trên Postman).
+| Test Case ID             | Tên Test Case (Mục tiêu kiểm thử)                    | Kỹ thuật (EP/BVA)  | Input Payload / Request Details                                            | Expected Status | Expected Response / DB Assertion                                                |
+| :----------------------- | :--------------------------------------------------- | :----------------- | :------------------------------------------------------------------------- | :-------------: | :------------------------------------------------------------------------------ |
+| **TC_ORD_01**            | [Admin Guard] User thường truy cập route Admin       | EP (Role Guard)    | `GET /api/admin/orders`<br>Header: `Bearer user_token`                     |     **403**     | `{ message: "Forbidden" }`<br>Chặn tại Middleware                               |
+| **TC_ORD_02**            | [Admin Guard] Admin truy cập route Admin             | EP (Role Guard)    | `GET /api/admin/orders`<br>Header: `Bearer admin_token`                    |     **200**     | `{ success: true, orders: [...] }`                                              |
+| **TC_ORD_03**            | [Ownership Guard] User A xóa đơn của User B          | EP (Security/IDOR) | `DELETE /api/orders/order_B_id`<br>Header: `Bearer user_A_token`           |     **403**     | `{ errors: [{ message: "FORBIDDEN" }] }`                                        |
+| **TC_ORD_04**            | [Valid Delete] User xóa đơn của mình khi `pending`   | EP (Valid State)   | `DELETE /api/orders/{pending_id}`<br>Header: `Bearer user_A_token`         |     **200**     | `{ success: true, message: "Order deleted..." }`<br>`deleteOne` được gọi        |
+| **TC_ORD_05**            | [Invalid Delete] Xóa đơn trạng thái `shipping`       | EP (Invalid State) | `DELETE /api/orders/{shipping_id}`                                         |     **400**     | `{ errors: [{ message: "CANNOT_DELETE_ACTIVE_ORDER" }] }`                       |
+| **TC_ORD_06**            | [Invalid Delete] Xóa đơn trạng thái `success`        | EP (Invalid State) | `DELETE /api/orders/{success_id}`                                          |     **400**     | `{ errors: [{ message: "CANNOT_DELETE_ACTIVE_ORDER" }] }`                       |
+| **TC_ORD_07**            | [Valid Transition] Admin chuyển sang `processing`    | EP (Valid State)   | `PUT /api/admin/orders/{id}`<br>Payload: `{ status: "processing" }`        |     **200**     | `{ success: true, message: "Order status updated..." }`<br>`updateOne` được gọi |
+| **TC_ORD_08**            | [Illegal Transition] Admin chuyển ngược từ `success` | BVA/EP (State)     | `PUT /api/admin/orders/{id}`<br>Payload: `{ status: "pending" }`           |     **400**     | `{ errors: [{ message: "ILLEGAL_STATUS_TRANSITION" }] }`                        |
+| **TC_ORD_09**            | [Illegal Transition] Admin chuyển ngược từ `failed`  | BVA/EP (State)     | `PUT /api/admin/orders/{id}`<br>Payload: `{ status: "pending" }`           |     **400**     | `{ errors: [{ message: "ILLEGAL_STATUS_TRANSITION" }] }`                        |
+| **TC_ORD_10**            | [Invalid Enum Status] Cập nhật status rác            | EP (Validation)    | `PUT /api/admin/orders/{id}`<br>Payload: `{ status: "xyz_status" }`        |     **400**     | `{ errors: [{ message: "INVALID_STATUS" }] }`                                   |
+| **TC_ORD_ADD_11**        | Admin lấy danh sách phân trang                       | EP (CRUD)          | `GET /api/admin/orders?page=1&limit=10`<br>Mock: Có dữ liệu User tương ứng |     **200**     | Response map đúng thông tin user                                                |
+| **TC_ORD_ADD_14**        | Admin update đơn không tồn tại                       | EP (Error Guard)   | `PUT /api/admin/orders/fake_id`                                            |     **404**     | `{ error: "ORDER_NOT_FOUND" }`                                                  |
+| **TC_ORD_ADD_17**        | Admin xóa đơn hàng thành công                        | EP (CRUD)          | `DELETE /api/admin/orders/{id}`                                            |     **200**     | `{ success: true }`<br>Gọi hàm `deleteOne`                                      |
+| **TC_ORD_ADD_18**        | Admin xóa đơn không tồn tại                          | EP (Error Guard)   | `DELETE /api/admin/orders/fake_id`                                         |     **404**     | `{ error: "ORDER_NOT_FOUND" }`                                                  |
+| **TC_ORD_ADD_19**        | User lấy danh sách đơn filter theo trạng thái        | EP (CRUD Filter)   | `GET /api/orders?status=pending`                                           |     **200**     | Response chứa danh sách đơn pending                                             |
+| **TC_ORD_ADD_20**        | User lấy danh sách đơn (không filter)                | EP (CRUD)          | `GET /api/orders`                                                          |     **200**     | Trả về tổng đơn hàng của User                                                   |
+| **TC_ORD_ADD_22**        | User lấy chi tiết đơn hàng                           | EP (CRUD)          | `GET /api/orders/detail/{id}`                                              |     **200**     | Trả về Object chi tiết đơn hàng                                                 |
+| **TC_ORD_ADD_26**        | User lấy chi tiết đơn không tồn tại                  | EP (Error Guard)   | `GET /api/orders/detail/fake_id`                                           |     **404**     | `{ error: "ORDER_NOT_FOUND" }`                                                  |
+| **TC_ORD_ADD_27**        | Delete với ID sai định dạng                          | BVA (Validation)   | `DELETE /api/orders/123xyz` (Không phải Hex 24)                            |     **400**     | `{ error: "INVALID_ORDER_ID" }`                                                 |
+| **TC_ORD_ADD_28**        | User xóa đơn không tồn tại                           | EP (Error Guard)   | `DELETE /api/orders/64a2b9...` (ID hợp lệ nhưng rỗng DB)                   |     **404**     | `{ error: "ORDER_NOT_FOUND" }`                                                  |
+| **TC_ORD_ADD_29**        | Tạo đơn hàng mới thành công                          | EP (CRUD)          | `POST /api/orders`<br>Payload: `{ amount: 1000 }`                          |     **200**     | `{ success: true, orderId }`<br>Gọi `insertOne`                                 |
+| **TC_ORD_ADD_30_UNAUTH** | Lấy danh sách khi mất Token                          | EP (Auth)          | `GET /api/orders`<br>Headers: Rỗng                                         |     **401**     | `{ error: "UNAUTHORIZED" }`                                                     |
+| **TC_ORD_ADD_31_UNAUTH** | Tạo đơn khi mất Token                                | EP (Auth)          | `POST /api/orders`<br>Headers: Rỗng                                        |     **401**     | `{ error: "UNAUTHORIZED" }`                                                     |
+| **TC_ORD_ADD_32_UNAUTH** | Xóa đơn khi mất Token                                | EP (Auth)          | `DELETE /api/orders/{id}`<br>Headers: Rỗng                                 |     **401**     | `{ error: "UNAUTHORIZED" }`                                                     |
 
-| Test Case ID             | Tên Test Case (Mục tiêu kiểm thử)                                 | Expected Status | Nhóm Nghiệp Vụ    |
-| :----------------------- | :---------------------------------------------------------------- | :-------------: | :---------------- |
-| **TC_ORD_01**            | [Admin Guard] User thường truy cập route Admin                    |       403       | Phân quyền (Auth) |
-| **TC_ORD_02**            | [Admin Guard] Admin truy cập route Admin                          |       200       | Phân quyền (Auth) |
-| **TC_ORD_03**            | [Ownership Guard] User A xóa đơn hàng của User B                  |       403       | IDOR / Ownership  |
-| **TC_ORD_04**            | [Valid Delete] User xóa đơn của mình khi `pending`                |       200       | State Machine     |
-| **TC_ORD_05**            | [Invalid Delete] Xóa đơn khi đang ở trạng thái `shipping`         |       400       | State Machine     |
-| **TC_ORD_06**            | [Invalid Delete] Xóa đơn khi đã ở trạng thái `success`            |       400       | State Machine     |
-| **TC_ORD_07**            | [Valid Transition] Admin chuyển từ `pending` sang `processing`    |       200       | State Machine     |
-| **TC_ORD_08**            | [Illegal Transition] Admin chuyển ngược từ `success` về `pending` |       400       | State Machine     |
-| **TC_ORD_09**            | [Illegal Transition] Admin chuyển ngược từ `failed` về `pending`  |       400       | State Machine     |
-| **TC_ORD_10**            | [Invalid Enum Status] Cập nhật status không thuộc Enum            |       400       | Validation        |
-| **TC_ORD_ADD_11**        | [getOrderForAdmin] Trả về danh sách đơn hàng cho Admin            |       200       | CRUD              |
-| **TC_ORD_ADD_14**        | [updateOrderForAdmin] Cập nhật thất bại do không tìm thấy đơn     |       404       | Error Handling    |
-| **TC_ORD_ADD_17**        | [deleteOrderForAdmin] Admin xóa đơn hàng thành công               |       200       | CRUD              |
-| **TC_ORD_ADD_18**        | [deleteOrderForAdmin] Admin xóa đơn không tồn tại                 |       404       | Error Handling    |
-| **TC_ORD_ADD_19**        | [getAllOrders] User lấy danh sách đơn hàng có filter `status`     |       200       | CRUD              |
-| **TC_ORD_ADD_20**        | [getAllOrders] User lấy danh sách đơn hàng không có filter        |       200       | CRUD              |
-| **TC_ORD_ADD_22**        | [getOrderById] User lấy chi tiết đơn hàng theo ID                 |       200       | CRUD              |
-| **TC_ORD_ADD_26**        | [getOrderById] User truy vấn ID đơn hàng không tồn tại            |       404       | Error Handling    |
-| **TC_ORD_ADD_27**        | [deleteOrder] Kiểm tra từ chối ID sai định dạng (Invalid format)  |       400       | Validation        |
-| **TC_ORD_ADD_28**        | [deleteOrder] User yêu cầu xóa đơn hàng không tồn tại             |       404       | Error Handling    |
-| **TC_ORD_ADD_29**        | [createOrder] Tạo đơn hàng mới thành công                         |       200       | CRUD              |
-| **TC_ORD_ADD_30_UNAUTH** | [getAllOrders] Từ chối truy cập khi mất Token/userId              |       401       | Phân quyền (Auth) |
-| **TC_ORD_ADD_31_UNAUTH** | [createOrder] Từ chối tạo đơn khi mất Token/userId                |       401       | Phân quyền (Auth) |
-| **TC_ORD_ADD_32_UNAUTH** | [deleteOrder] Từ chối xóa đơn khi mất Token/userId                |       401       | Phân quyền (Auth) |
+#### Bảng 1.2b: Phân hệ Whitebox Testing (Kiểm thử cấu trúc nội bộ - 9 TCs)
 
-#### B. Phân hệ Whitebox Testing (Kiểm thử cấu trúc nội bộ)
-
-Đi sâu vào cấu trúc mã nguồn để "vét" các điểm mù (lỗi CSDL, nullish fallback).
-
-| Test Case ID                | Mục tiêu phủ Code Coverage (Structural Target)                           | Kỹ thuật sử dụng   | Code Branch nhắm tới  |
-| :-------------------------- | :----------------------------------------------------------------------- | :----------------- | :-------------------- |
-| **TC_ORD_ADD_12**           | Phủ vòng lặp `.map` khi tham chiếu User trong CSDL bị rỗng.              | Mock DB Response   | Nullish Fallback      |
-| **TC_ORD_ADD_13**           | Phủ toán tử `?? 0` khi DB bị khuyết trường `finalPrice` (Admin).         | Mock DB Response   | Logical Fallback `??` |
-| **TC_ORD_ADD_15**           | Ép DB trả về `{ modifiedCount: 0 }` để mô phỏng lỗi Concurrency.         | Mock `updateOne`   | `modifiedCount === 0` |
-| **TC_ORD_ADD_16**           | Phủ lỗi cấu trúc khi biến ID là chuỗi thay vì instance `ObjectId`.       | Pass string type   | Data Type Casting     |
-| **TC_ORD_ADD_21**           | Phủ toán tử `?? 0` khi DB bị khuyết trường price (User).                 | Mock DB Response   | Logical Fallback `??` |
-| **TC_ORD_ADD_23**           | Phủ logic chuẩn hóa (normalize) thuộc tính `status` dạng String.         | Pass string        | `typeof === 'string'` |
-| **TC_ORD_ADD_24**           | Phủ logic chuẩn hóa `status` ở định dạng Value Object.                   | Pass object        | `status.value`        |
-| **TC_ORD_ADD_25**           | Phủ logic mặc định biến `status` lạ về giá trị `'pending'`.              | Pass unknown type  | Switch-case Default   |
-| **TC_ORD_ADD_33_CATCH_ERR** | Kích hoạt toàn bộ khối `catch(error)` ném ra lỗi 500 do DB ngắt kết nối. | Mock `throw Error` | `catch (error)` block |
+| Test Case ID      | Mục tiêu phủ Coverage (Structural Target)      | Kỹ thuật (Whitebox) | Setup Mock & Payload                                             | Nhánh Code bị kích hoạt / Assertion             |
+| :---------------- | :--------------------------------------------- | :------------------ | :--------------------------------------------------------------- | :---------------------------------------------- |
+| **TC_ORD_ADD_12** | Phủ vòng lặp khi User bị rỗng trong hàm Admin. | Nullish Injection   | Mock DB: Đơn hàng có `userId` nhưng bảng User `findOne` trả rỗng | Fallback tạo user object là `null`              |
+| **TC_ORD_ADD_13** | Phủ toán tử `?? 0` khi DB mất `finalPrice`.    | Data Anomaly        | Mock DB Order: Object không có `finalPrice`                      | Kích hoạt `o.finalPrice ?? o.totalPrice ?? 0`   |
+| **TC_ORD_ADD_15** | Kiểm tra lỗi Concurrency khi update xịt.       | Mock Implementation | `updateOne.mockResolvedValue({ modifiedCount: 0 })`              | Kích hoạt `if (modifiedCount === 0) return 400` |
+| **TC_ORD_ADD_16** | Phủ lỗi Type Casting khi ép kiểu ID.           | Data Injection      | Truyền `orderId` mảng/object sai Type                            | Tự chuyển đổi query `_id` vs `orderId`          |
+| **TC_ORD_ADD_21** | Phủ toán tử `?? 0` khi DB mất price (User).    | Data Anomaly        | Mock DB trả ra đơn khuyết tiền cho User list                     | Kích hoạt `?? 0` ở hàm `getAllOrders`           |
+| **TC_ORD_ADD_23** | Phủ chuẩn hóa (normalize) String.              | Type Reflection     | Mock hàm normalize nhận String                                   | Trả ra chính String đó                          |
+| **TC_ORD_ADD_24** | Phủ chuẩn hóa Value Object.                    | Object Reflection   | Mock hàm normalize nhận `{ value: "pending" }`                   | Nhánh trả ra `status.value`                     |
+| **TC_ORD_ADD_25** | Phủ mặc định giá trị lạ về `'pending'`.        | Switch Default      | Mock hàm normalize nhận type quái dị                             | Rơi xuống dòng `return "pending"`               |
+| **TC_ORD_ADD_33** | Kích hoạt toàn bộ khối `catch(error)`.         | Exception Throwing  | `orderCol.mockRejectedValue(new Error("DB Down"))`               | Nhảy xuống block catch, trả ra 500              |
 
 ---
 
-## 🟢 PHẦN 2: PHÂN TÍCH ĐỒ THỊ DÒNG ĐIỀU KHIỂN & CÂU HỎI ĐỊNH LƯỢNG
+## 🟢 PHẦN 2: PHÂN TÍCH ĐỒ THỊ DÒNG ĐIỀU KHIỂN & SỐ LƯỢNG TEST CASE TỐI ƯU
 
 ### 2.1. Đồ thị CFG cho hàm `deleteOrder`
 
@@ -127,34 +123,52 @@ flowchart TD
 
 ---
 
-### 2.2. Định lượng cho 100% Statement Coverage
+### 2.2. Số lượng Test Case định lượng cho 100% Statement Coverage
 
 **Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Statement Coverage?
 
-**Trả lời:** Mặc dù ta đã tạo 33 Test Case, nhưng để phủ kín 100% Statement của toàn bộ file `order.controller.ts`, ta cần lọc ra đúng **14 Test Cases Tối Thiểu (Minimal Statement Set)**:
+**Trả lời:** Từ tổng số 33 Test Case, ta cần lọc ra **Tập tối thiểu gồm 14 Test Cases** để mọi dòng lệnh trong module `order.controller.ts` được thực thi ít nhất một lần.
 
-1. **TC_ORD_01, TC_ORD_02**: Phủ dòng lệnh kiểm tra Auth (Admin Guard Middleware).
-2. **TC_ORD_04, TC_ORD_07**: Phủ các dòng lệnh ghi CSDL thành công (Happy Paths của Delete và Update).
-3. **TC_ORD_03, TC_ORD_05, TC_ORD_10, TC_ORD_ADD_27**: Phủ các dòng lệnh báo lỗi nghiệp vụ cơ bản (Validation, Enum, Chặn xóa đơn Active, Chặn IDOR).
-4. **TC_ORD_ADD_11, TC_ORD_ADD_19, TC_ORD_ADD_22**: Phủ các dòng lệnh truy vấn dữ liệu (GET list phân trang, GET filter, GET chi tiết).
-5. **TC_ORD_ADD_14, TC_ORD_ADD_28**: Phủ các dòng lệnh Not Found 404 (Khi DB trả về rỗng).
-6. **TC_ORD_ADD_33_CATCH_ERR (Whitebox)**: Bắt buộc phải có để phủ lệnh `catch(error)` (Block 500).
+**Bảng Danh sách Test Cases bắt buộc phải chạy để phủ kín Statements:**
 
-_(Nếu thiếu 1 trong 14 case này, Statement Coverage sẽ không thể đạt 100%)._
+|  STT   | Test Case ID            | Mục đích bao phủ (Statement Target)                    | Mã nguồn được kích hoạt trong `order.controller.ts`                       |
+| :----: | :---------------------- | :----------------------------------------------------- | :------------------------------------------------------------------------ |
+| **1**  | **TC_ORD_01, 02**       | Phủ lệnh gọi Guard kiểm duyệt Token Admin              | Middleware chạy trước Controller, cho đi tiếp vào các hàm `...ForAdmin`   |
+| **2**  | **TC_ORD_04, 07**       | Phủ lệnh ghi CSDL của User và Admin (Happy Path)       | Gọi `orderCol.deleteOne`, `updateOne` và trả `200 OK`                     |
+| **3**  | **TC_ORD_ADD_11**       | Phủ đoạn code `map` gộp Object User cho Admin          | Dòng code chứa `userMap.get(...)` (Từ L31-40)                             |
+| **4**  | **TC_ORD_10**           | Phủ lệnh kiểm tra trạng thái mảng `includes`           | Khối chặn if `!validStatuses.includes(status)` $\to$ `400 INVALID_STATUS` |
+| **5**  | **TC_ORD_ADD_19**       | Phủ lệnh gán `filter.status` ở list đơn hàng User      | Nhánh `if (["success", "pending"...].includes(rawStatus))` (L167)         |
+| **6**  | **TC_ORD_ADD_22**       | Phủ cấu trúc hàm `normalizeStatus`                     | Dòng code gán thuộc tính Object: `status: normalizeStatus(...)` (L226)    |
+| **7**  | **TC_ORD_ADD_27**       | Phủ lệnh check định dạng `ObjectId.isValid`            | Lệnh ném lỗi `res.status(400) INVALID_ORDER_ID` (L276)                    |
+| **8**  | **TC_ORD_03**           | Phủ nhánh chống lỗ hổng BOLA / IDOR                    | Cấu trúc `if (order.userId !== userId) -> 403 FORBIDDEN` (L290)           |
+| **9**  | **TC_ORD_05**           | Phủ khối bảo vệ đơn hàng đang chạy (Active Order)      | Lệnh `return 400 CANNOT_DELETE_ACTIVE_ORDER` (L297)                       |
+| **10** | **TC_ORD_ADD_14, 28**   | Phủ lệnh kiểm tra null của Database `!order`           | Các nhánh `if (!order) return 404 ORDER_NOT_FOUND`                        |
+| **11** | **TC_ORD_ADD_29**       | Phủ luồng tạo đơn hàng mới của hàm `createOrder`       | Lệnh `insertOne` và trả về `200 OK` (L241-260)                            |
+| **12** | **TC_ORD_ADD_33_CATCH** | Kích hoạt bắt buộc mọi lệnh `console.error` và bẫy 500 | Quét qua tất cả 6 khối `catch (error)` trong Controller                   |
 
 ---
 
-### 2.3. Định lượng cho 100% Branch Coverage
+### 2.3. Số lượng Test Case định lượng cho 100% Branch Coverage (Độ phủ nhánh)
 
 **Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Branch Coverage?
 
-**Trả lời:** Branch Coverage đòi hỏi khắt khe hơn: mọi câu lệnh rẽ nhánh (`if`, `||`, `??`) phải được chạy cả nhánh True và False. Ta cần chạy **18 Test Cases** (Bao gồm 14 test của Statement Coverage + 4 test bổ sung):
+**Trả lời:** Branch Coverage đòi hỏi khắt khe hơn: mọi câu lệnh rẽ nhánh (`if`, `||`, `&&`, fallback `??`) phải được chạy đủ 2 luồng True và False. Tổng cộng cần **18 Test Cases** (gồm 14 test Statement + 4 test bổ sung).
 
-**Bổ sung 4 Test Cases (Minimal Branch Set):**
+**Bảng Ma trận các nhánh điều kiện bảo đảm 100% Branch Coverage:**
 
-1. **TC_ORD_08 (Blackbox)**: Bẻ nhánh True của câu lệnh cấm chuyển ngược trạng thái `if ((success || failed) && status == 'pending')`.
-2. **TC_ORD_ADD_13, TC_ORD_ADD_21 (Whitebox)**: Bẻ nhánh True của toán tử Fallback logic `order.finalPrice ?? 0` khi DB bị khuyết dữ liệu.
-3. **TC_ORD_ADD_15 (Whitebox)**: Bẻ nhánh True của lỗi Concurrency `if (modifiedCount === 0)` khi ghi đè DB thất bại.
+|  STT   | Cấu trúc rẽ nhánh trong mã nguồn                                                           | Nhánh True (T)                               | Nhánh False (F)                       | Test Case phủ nhánh True | Test Case phủ nhánh False |
+| :----: | :----------------------------------------------------------------------------------------- | :------------------------------------------- | :------------------------------------ | :----------------------- | :------------------------ |
+| **1**  | `if (!validStatuses.includes(status))`                                                     | Trạng thái rác $\to$ Báo 400                 | Trạng thái đúng $\to$ Đi tiếp         | **TC_ORD_10**            | **TC_ORD_07**             |
+| **2**  | `if (!order)` (Admin update)                                                               | Truy vấn rỗng $\to$ Báo 404                  | Có đơn hàng $\to$ Bắt đầu xử lý       | **TC_ORD_ADD_14**        | **TC_ORD_07**             |
+| **3**  | `if ((order.status === "success" \|\| order.status === "failed") && status === "pending")` | Vi phạm State Machine $\to$ Báo 400          | Chuyển luồng hợp lệ $\to$ Cho đi tiếp | **TC_ORD_08, 09**        | **TC_ORD_07**             |
+| **4**  | `if (result.modifiedCount === 0)`                                                          | Lỗi Concurrency $\to$ Báo 400                | DB thực thi ghi đè tốt $\to$ 200      | **TC_ORD_ADD_15**        | **TC_ORD_07**             |
+| **5**  | `if (!userId)` (Bảo vệ API User)                                                           | Không có Token $\to$ Báo lỗi 401             | Có đủ Token $\to$ Tiếp tục tìm DB     | **TC_ORD_ADD_30**        | **TC_ORD_ADD_19**         |
+| **6**  | `if (["success", "pending"...].includes(rawStatus))`                                       | Có truyền filter chuẩn $\to$ Gán biến filter | Không filter $\to$ Bỏ qua             | **TC_ORD_ADD_19**        | **TC_ORD_ADD_20**         |
+| **7**  | `if (!ObjectId.isValid(orderId))`                                                          | ID truyền vào chuỗi bậy $\to$ Báo 400        | Format Hex chuẩn 24 $\to$ Query       | **TC_ORD_ADD_27**        | **TC_ORD_04**             |
+| **8**  | `if (order.userId.toString() !== userId.toString())`                                       | Đơn thuộc User khác $\to$ Báo 403 IDOR       | Đúng chủ nhân $\to$ Cho đi tiếp       | **TC_ORD_03**            | **TC_ORD_04**             |
+| **9**  | `if (order.status !== "pending")`                                                          | Đang giao/xong $\to$ Cấm xóa 400             | Đang chờ $\to$ Cho phép xóa           | **TC_ORD_05, 06**        | **TC_ORD_04**             |
+| **10** | Toán tử `o.finalPrice ?? o.totalPrice ?? 0`                                                | Trường `finalPrice` rỗng $\to$ lấy Fallback  | Đã có giá trị chuẩn $\to$ Bỏ qua      | **TC_ORD_ADD_13, 21**    | **TC_ORD_02, 19**         |
+| **11** | `try { ... } catch (error)` trên 6 routes                                                  | Lỗi đứt cáp DB $\to$ Bay vào 500             | Luồng chạy tốt $\to$ 200              | **TC_ORD_ADD_33**        | **TC_ORD_04, 07**         |
 
 ---
 
@@ -194,5 +208,5 @@ Ngược lại, khi map sang cấu trúc mã nguồn, bộ test BVA/EP lại sin
 Qua việc thực nghiệm trên module Order, có thể rút ra kết luận cốt lõi:
 
 1. **BVA/EP (Blackbox) là ĐIỀU KIỆN CẦN**: Cực kỳ thiết yếu để đảm bảo phần mềm chạy đúng nghiệp vụ kinh doanh, bảo vệ an toàn cho User. Tuy nhiên, nó là chưa đủ vì bỏ lọt điểm mù hạ tầng.
-2. **Structural Testing (Whitebox) là ĐIỀU KIỆN ĐỦ**: Đóng vai trò "chiếc chổi" quét sạch các "góc tối" của mã nguồn (nhánh catch, toán tử dự phòng), nhưng lại xa rời hành vi của User thật.
+2. **Structural Testing (Whitebox) là ĐIỀU ĐIỀU KIỆN ĐỦ**: Đóng vai trò "chiếc chổi" quét sạch các "góc tối" của mã nguồn (nhánh catch, toán tử dự phòng), nhưng lại xa rời hành vi của User thật.
 3. $\implies$ **Phương pháp toàn vẹn nhất**: Lấy **BVA/EP làm bộ khung xương sống** (tạo base case), sau đó dùng công cụ đo lường Coverage soi chiếu vào Code để phát hiện điểm mù, và cuối cùng dùng **Whitebox lấp đầy cái thiếu, cắt tỉa cái thừa**. Sự đan xen này chính là nghệ thuật tạo nên bộ Unit Test đạt mức tuyệt đối 100% Coverage nhưng vẫn tinh gọn.
