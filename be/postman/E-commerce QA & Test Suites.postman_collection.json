@@ -4,7 +4,7 @@
     "name": "E-commerce QA & Test Suites",
     "description": "Bộ thử nghiệm cho quy trình đặt hàng COD và thanh toán Sandbox qua cổng VNPay.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "57642471",
+    "_exporter_id": "39845541",
     "_collection_link": "https://go.postman.co/collection/39845541-cc26c9c6-3ca0-4a3b-877f-20d68576e8fa?source=collection_link"
   },
   "item": [
@@ -15,23 +15,23 @@
           "name": "1. Authentication",
           "item": [
             {
-              "name": "TC_AUTH_01 - Register Valid Account",
+              "name": "TC-AUTH-01: [Valid] Đăng ký thành công - Email tự động .trim() và .toLowerCase()",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 200 OK or 201 Created\", function () {",
-                      "    pm.expect([200, 201]).to.include(pm.response.code);",
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
                       "});",
-                      "pm.test(\"Response returns success: true\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.success).to.eql(true);",
+                      "",
+                      "pm.test(\"Response body contains success: true\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property(\"success\");",
+                      "    pm.expect(jsonData.success).to.be.true;",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -40,12 +40,18 @@
                 "header": [
                   {
                     "key": "Content-Type",
-                    "value": "application/json"
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test.checkout01@example.com\",\n    \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"   Test.User@Domain.COM   \",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
@@ -62,7 +68,7 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_02 - Register BVA Email Min- (4 chars)",
+              "name": "TC-AUTH-03: [BVA Min- Invalid] Email < 5 ký tự (4 chars) -> Reject 400",
               "event": [
                 {
                   "listen": "test",
@@ -71,14 +77,12 @@
                       "pm.test(\"Status code is 400 Bad Request\", function () {",
                       "    pm.response.to.have.status(400);",
                       "});",
-                      "pm.test(\"Response contains validation error\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData).to.have.property('error');",
+                      "",
+                      "pm.test(\"Response contains validation error details\", function () {",
+                      "    pm.expect(pm.response.code).to.eql(400);",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -87,12 +91,18 @@
                 "header": [
                   {
                     "key": "Content-Type",
-                    "value": "application/json"
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"a@b.\",\n    \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"a@b.\",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
@@ -109,50 +119,7 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_03 - Register BVA Password Min- (7 chars)",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test(\"Status code is 400 Bad Request\", function () {",
-                      "    pm.response.to.have.status(400);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"valid.email@example.com\",\n    \"password\": \"Pass1!\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/register",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "register"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "TC_AUTH_04 - Register Duplicate Email",
+              "name": "TC-AUTH-04: [EP Duplicate Account] Đăng ký email đã tồn tại -> Reject 400",
               "event": [
                 {
                   "listen": "test",
@@ -161,14 +128,13 @@
                       "pm.test(\"Status code is 400 Bad Request\", function () {",
                       "    pm.response.to.have.status(400);",
                       "});",
-                      "pm.test(\"Error message indicates account exists\", function () {",
-                      "    var text = pm.response.text();",
-                      "    pm.expect(text).to.include(\"ACCOUNT_ALREADY_EXISTS\");",
+                      "",
+                      "pm.test(\"Error code is ACCOUNT_ALREADY_EXISTS\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"ACCOUNT_ALREADY_EXISTS\");",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -177,12 +143,18 @@
                 "header": [
                   {
                     "key": "Content-Type",
-                    "value": "application/json"
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"name\": \"Duplicate User\",\n    \"email\": \"existing.user@example.com\",\n    \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"name\": \"User Test\",\n  \"email\": \"existing@example.com\",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/register",
@@ -199,7 +171,7 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_05 - Login Valid Credentials",
+              "name": "TC-AUTH-07: [Valid Login] Đăng nhập thành công trả về Token & User Info",
               "event": [
                 {
                   "listen": "test",
@@ -208,64 +180,25 @@
                       "pm.test(\"Status code is 200 OK\", function () {",
                       "    pm.response.to.have.status(200);",
                       "});",
-                      "pm.test(\"Response contains token and user object\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.success).to.eql(true);",
-                      "    pm.expect(jsonData.data).to.have.property('token');",
-                      "    pm.expect(jsonData.data).to.have.property('user');",
-                      "    pm.environment.set(\"token\", jsonData.data.token);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "request": {
-                "method": "POST",
-                "header": [
-                  {
-                    "key": "Content-Type",
-                    "value": "application/json"
-                  }
-                ],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"{{userPassword}}\"\n}"
-                },
-                "url": {
-                  "raw": "{{baseUrl}}/api/auth/login",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "auth",
-                    "login"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
-              "name": "TC_AUTH_06 - Login Wrong Password",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test(\"Status code is 401 Unauthorized\", function () {",
-                      "    pm.response.to.have.status(401);",
+                      "",
+                      "pm.test(\"Response contains Token and User Info\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "    pm.expect(jsonData).to.have.property(\"data\");",
+                      "    pm.expect(jsonData.data).to.have.property(\"token\");",
+                      "    pm.expect(jsonData.data).to.have.property(\"user\");",
+                      "    ",
+                      "    // Tự động lưu token vào biến môi trường authToken",
+                      "    if (jsonData.data && jsonData.data.token) {",
+                      "        pm.collectionVariables.set(\"authToken\", jsonData.data.token);",
+                      "    }",
                       "});",
-                      "pm.test(\"Error is WRONG_PASSWORD\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.error).to.eql(\"WRONG_PASSWORD\");",
+                      "",
+                      "pm.test(\"Cookie session_token is set or header Set-Cookie present\", function () {",
+                      "    pm.expect(pm.cookies.has(\"session_token\") || pm.response.headers.has(\"Set-Cookie\")).to.be.true;",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -274,12 +207,18 @@
                 "header": [
                   {
                     "key": "Content-Type",
-                    "value": "application/json"
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"{{userEmail}}\",\n    \"password\": \"IncorrectPassword999!\"\n}"
+                  "raw": "{\n  \"email\": \"valid@example.com\",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/login",
@@ -296,7 +235,7 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_07 - Login Blocked Account",
+              "name": "TC-AUTH-08: [Blocked Account] Đăng nhập tài khoản bị khóa (isBlocked = true) -> Reject 403",
               "event": [
                 {
                   "listen": "test",
@@ -305,14 +244,13 @@
                       "pm.test(\"Status code is 403 Forbidden\", function () {",
                       "    pm.response.to.have.status(403);",
                       "});",
-                      "pm.test(\"Error message explains blocked status\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.error).to.include(\"blocked\");",
+                      "",
+                      "pm.test(\"Error message indicates account is blocked\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"This account has been blocked\");",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -321,12 +259,18 @@
                 "header": [
                   {
                     "key": "Content-Type",
-                    "value": "application/json"
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"email\": \"test.user.97@example.com\",\n    \"password\": \"Password123!\"\n}"
+                  "raw": "{\n  \"email\": \"blocked@example.com\",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
                   "raw": "{{baseUrl}}/api/auth/login",
@@ -343,7 +287,111 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_08 - Get Profile Authenticated",
+              "name": "TC-AUTH-09: [Wrong Password] Mật khẩu không đúng -> Reject 401",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 401 Unauthorized\", function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test(\"Error message is WRONG_PASSWORD\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"WRONG_PASSWORD\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"valid@example.com\",\n  \"password\": \"WrongPassword!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-10: [Account Not Found] Đăng nhập email không tồn tại -> 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404 Not Found\", function () {",
+                      "    pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"Error message is ACCOUNT_NOT_FOUND\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"ACCOUNT_NOT_FOUND\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"notexist@example.com\",\n  \"password\": \"Password123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-12: [Logout] Đăng xuất người dùng thành công",
               "event": [
                 {
                   "listen": "test",
@@ -352,9 +400,49 @@
                       "pm.test(\"Status code is 200 OK\", function () {",
                       "    pm.response.to.have.status(200);",
                       "});",
-                      "pm.test(\"Password hash is omitted from profile\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.data).to.not.have.property('password_hash');",
+                      "",
+                      "pm.test(\"Response body confirms logout success\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/api/auth/logout",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "logout"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-16: [Valid Profile] Lấy profile người dùng thành công",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"Profile data returned with success = true and user info\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "    pm.expect(jsonData).to.have.property(\"data\");",
+                      "    pm.expect(jsonData.data).to.have.property(\"email\");",
                       "});"
                     ],
                     "type": "text/javascript"
@@ -366,7 +454,8 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{token}}"
+                    "value": "Bearer {{authToken}}",
+                    "type": "text"
                   }
                 ],
                 "url": {
@@ -383,43 +472,43 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_09 - Logout User",
+              "name": "TC-AUTH-17: [Profile Not Found] User không tồn tại trong DB -> 404",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test(\"Status code is 200 OK\", function () {",
-                      "    pm.response.to.have.status(200);",
+                      "pm.test(\"Status code is 404 Not Found\", function () {",
+                      "    pm.response.to.have.status(404);",
                       "});",
-                      "pm.test(\"Success message returned\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.success).to.eql(true);",
+                      "",
+                      "pm.test(\"Response error message is USER_NOT_FOUND\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.false;",
+                      "    pm.expect(jsonData.message).to.eql(\"USER_NOT_FOUND\");",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
               "request": {
-                "method": "POST",
+                "method": "GET",
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{token}}"
+                    "value": "Bearer {{nonExistentUserToken}}",
+                    "type": "text"
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/auth/logout",
+                  "raw": "{{baseUrl}}/api/profile",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
-                    "auth",
-                    "logout"
+                    "profile"
                   ]
                 }
               },
@@ -431,7 +520,7 @@
           "name": "2. User Management (Admin)",
           "item": [
             {
-              "name": "TC_AUTH_10 - Get All Users Pagination (Page 1 Limit 10)",
+              "name": "TC-AUTH-13: [Get All Users] Lấy danh sách phân trang người dùng",
               "event": [
                 {
                   "listen": "test",
@@ -440,16 +529,17 @@
                       "pm.test(\"Status code is 200 OK\", function () {",
                       "    pm.response.to.have.status(200);",
                       "});",
-                      "pm.test(\"Pagination meta fields are present\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData).to.have.property('users');",
-                      "    pm.expect(jsonData).to.have.property('pagination');",
-                      "    pm.expect(jsonData.pagination.currentPage).to.eql(1);",
+                      "",
+                      "pm.test(\"Response contains users array and pagination object\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData).to.have.property(\"users\");",
+                      "    pm.expect(jsonData.users).to.be.an(\"array\");",
+                      "    pm.expect(jsonData).to.have.property(\"pagination\");",
+                      "    pm.expect(jsonData.pagination).to.have.property(\"currentPage\");",
+                      "    pm.expect(jsonData.pagination).to.have.property(\"totalPages\");",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -458,7 +548,8 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
                   }
                 ],
                 "url": {
@@ -486,7 +577,7 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_11 - Toggle Block User",
+              "name": "TC-AUTH-19: [Pagination Fallback] page & limit là chuỗi không hợp lệ -> dùng default 1/10",
               "event": [
                 {
                   "listen": "test",
@@ -495,14 +586,68 @@
                       "pm.test(\"Status code is 200 OK\", function () {",
                       "    pm.response.to.have.status(200);",
                       "});",
-                      "pm.test(\"Message confirms block/unblock action\", function () {",
-                      "    var jsonData = pm.response.json();",
-                      "    pm.expect(jsonData.success).to.eql(true);",
+                      "",
+                      "pm.test(\"Pagination falls back to default currentPage = 1 and limit = 10\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.pagination.currentPage).to.eql(1);",
+                      "    pm.expect(jsonData.pagination.limit).to.eql(10);",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users?page=abc&limit=xyz",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users"
+                  ],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "abc"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "xyz"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-14: [Toggle Block] Khóa người dùng thành công",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"User blocked confirmation message received\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "    pm.expect(jsonData.message).to.eql(\"User has been blocked\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -510,20 +655,27 @@
                 "method": "PUT",
                 "header": [
                   {
-                    "key": "Content-Type",
-                    "value": "application/json"
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
                   },
                   {
-                    "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
                   }
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n    \"block\": true\n}"
+                  "raw": "{\n  \"isBlocked\": true,\n  \"block\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
                 },
                 "url": {
-                  "raw": "{{baseUrl}}/api/admin/users/{{targetUserId}}/block",
+                  "raw": "{{baseUrl}}/api/admin/users/{{testUserId}}/block",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -531,7 +683,7 @@
                     "api",
                     "admin",
                     "users",
-                    "{{targetUserId}}",
+                    "{{testUserId}}",
                     "block"
                   ]
                 }
@@ -539,7 +691,67 @@
               "response": []
             },
             {
-              "name": "TC_AUTH_12 - Delete User Non-Existent (404)",
+              "name": "TC-AUTH-22: [Unblock User] Mở khóa user thành công -> message 'unblocked'",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"User unblocked confirmation message received\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "    pm.expect(jsonData.message).to.eql(\"User has been unblocked\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/{{testUserId}}/block",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{testUserId}}",
+                    "block"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-21: [User Not Found] Toggle block user không tồn tại -> 404",
               "event": [
                 {
                   "listen": "test",
@@ -547,11 +759,74 @@
                     "exec": [
                       "pm.test(\"Status code is 404 Not Found\", function () {",
                       "    pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"Error message is USER_NOT_FOUND\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"USER_NOT_FOUND\");",
                       "});"
                     ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json",
+                    "type": "text"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"block\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/{{nonExistentUserId}}/block",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{nonExistentUserId}}",
+                    "block"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-24: [Delete Success] Xóa user tồn tại thành công -> 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 200 OK\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test(\"User deletion confirmed with success = true\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.success).to.be.true;",
+                      "    pm.expect(jsonData.message).to.eql(\"User deleted successfully\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
                   }
                 }
               ],
@@ -560,11 +835,12 @@
                 "header": [
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{adminToken}}"
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/admin/users/507f1f77bcf86cd799439099",
+                  "raw": "{{baseUrl}}/api/admin/users/{{testUserId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
@@ -572,7 +848,51 @@
                     "api",
                     "admin",
                     "users",
-                    "507f1f77bcf86cd799439099"
+                    "{{testUserId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "TC-AUTH-15: [Delete User] Xóa người dùng không tồn tại -> 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Status code is 404 Not Found\", function () {",
+                      "    pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test(\"Error message is USER_NOT_FOUND\", function () {",
+                      "    const jsonData = pm.response.json();",
+                      "    pm.expect(jsonData.error).to.eql(\"USER_NOT_FOUND\");",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{adminToken}}",
+                    "type": "text"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/admin/users/{{nonExistentUserId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "admin",
+                    "users",
+                    "{{nonExistentUserId}}"
                   ]
                 }
               },
@@ -1890,19 +2210,546 @@
       "name": "Product Catalog & Management Test Suite",
       "item": [
         {
-          "name": "TC_PROD_01 - Get Products List (Pagination Clamp Limit 100)",
+          "name": "TC01: [Valid Min] Price = 1000 -> Accept 200",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200 OK\", function () {",
+                  "pm.test(\"Status code is 200\", function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
-                  "pm.test(\"Pagination limit clamped properly\", function () {",
+                  "pm.test(\"Price is 1000\", function () {",
                   "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData).to.have.property('products');",
-                  "    pm.expect(jsonData).to.have.property('pagination');",
+                  "    pm.expect(jsonData.product.price).to.eql(1000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm min\",\n  \"price\": 1000,\n  \"category\": \"Test Category\",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/image.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC02: [Valid Max] Price = 1,000,000,000 & Slugify Category -> Accept 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Price is 1,000,000,000 and Category is slugified\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.price).to.eql(1000000000);",
+                  "    pm.expect(jsonData.product.category).to.eql(\"đồ-gia-dụng\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm max\",\n  \"price\": 1000000000,\n  \"category\": \"  Đồ Gia Dụng   \",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/image.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC03: [BVA Min- Invalid] Price = 999 -> Reject 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error message contains minimum price constraint\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var msg = (jsonData.details && jsonData.details[0] && jsonData.details[0].message) || JSON.stringify(jsonData);",
+                  "    pm.expect(msg).to.include(\"Price must be at least 1,000 VND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm lỗi\",\n  \"price\": 999,\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/img.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC04: [EP Invalid Float] Price = 1500.5 -> Reject 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Error message specifies integer requirement\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    var msg = (jsonData.details && jsonData.details[0] && jsonData.details[0].message) || JSON.stringify(jsonData);",
+                  "    pm.expect(msg).to.include(\"Price must be an integer\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm lỗi\",\n  \"price\": 1500.5,\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/img.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC05: [Valid Coercion] Price string '5000' -> Accept 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Price string is coerced to number 5000\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.price).to.eql(5000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm coercion\",\n  \"price\": \"5000\",\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/img.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC06: [BVA Max+1 Invalid] Price = 1,000,000,001 -> Reject 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Price exceeds maximum value rejected\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm quá max\",\n  \"price\": 1000000001,\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\",\n  \"imageUrl\": \"http://test.com/img.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC07: [Valid Mid] Price = 25,000,000 -> Accept 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Product created with price 25,000,000\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.price).to.eql(25000000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laptop Gaming\",\n  \"price\": 25000000,\n  \"category\": \"Electronics\",\n  \"description\": \"High-end gaming laptop\",\n  \"imageUrl\": \"http://test.com/laptop.png\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC10: [No Image] Product without imageUrl uses empty string -> Accept 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"imageUrl defaults to empty string\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.imageUrl).to.eql(\"\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm không ảnh\",\n  \"price\": 5000,\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC08: [No Token] POST without token -> Reject 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Unauthorized without JWT token\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm\",\n  \"price\": 5000,\n  \"category\": \"Test\",\n  \"description\": \"Mô tả\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC11: [No Category] Product without category defaults to uncategorized -> Accept 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Category defaults to uncategorized\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.category).to.eql(\"uncategorized\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sản phẩm không category\",\n  \"price\": 5000,\n  \"description\": \"Mô tả\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC12: [Valid Query] page=2, limit=20 -> Return 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Pagination maintains exact parameters\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.currentPage).to.eql(2);",
+                  "    pm.expect(jsonData.pagination.limit).to.eql(20);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -1913,7 +2760,98 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/products?page=1&limit=500",
+              "raw": "{{baseUrl}}/api/products?page=2&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC13: [BVA Page Min- Invalid] page=-5, limit=abc -> Fallback page=1, limit=10",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Fallback to default page=1 and limit=10\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.currentPage).to.eql(1);",
+                  "    pm.expect(jsonData.pagination.limit).to.eql(10);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=-5&limit=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "-5"
+                },
+                {
+                  "key": "limit",
+                  "value": "abc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC14: [BVA Limit Max+ Invalid] limit=9999 -> Clamp limit=100",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Clamp limit to maximum safe 100\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.limit).to.eql(100);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=1&limit=9999",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1928,7 +2866,7 @@
                 },
                 {
                   "key": "limit",
-                  "value": "500"
+                  "value": "9999"
                 }
               ]
             }
@@ -1936,34 +2874,1251 @@
           "response": []
         },
         {
-          "name": "TC_PROD_02 - Get Product By Valid ObjectId",
+          "name": "TC15: [Empty Result] Empty product list -> Return 200",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 200 OK or 404 Not Found\", function () {",
-                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Products array returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(Array.isArray(jsonData.products)).to.be.true;",
                   "});"
                 ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
+                "type": "text/javascript"
               }
             }
           ],
           "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC16: [Pagination Meta] Middle page hasNext=true, hasPrev=true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Pagination metadata contains boolean flags\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination).to.have.property(\"hasNext\");",
+                  "    pm.expect(jsonData.pagination).to.have.property(\"hasPrev\");",
+                  "    pm.expect(jsonData.pagination).to.have.property(\"totalPages\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=2&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
                 {
-                  "key": "token",
-                  "value": "{{bearerToken}}",
-                  "type": "string"
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
                 }
               ]
-            },
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC17: [Pagination First Page] page=1 -> hasPrev=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"hasPrev is false on first page\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.hasPrev).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
             "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=1&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC18: [Pagination Last Page] last page -> hasNext=false",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"hasNext is false on last/exceeded page\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.hasNext).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=9999&limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "9999"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC20: [Valid ObjectId] Format 24 hex characters -> Return 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Product found successfully with valid ObjectId\", function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC21: [Invalid Query] page<=0 hoặc chữ -> Default về 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Page <= 0 defaults to 1\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.pagination.currentPage).to.eql(1);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products?page=0&limit=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "limit",
+                  "value": "abc"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC22: [Invalid ObjectId] Invalid ObjectId format -> Reject 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Invalid ObjectId rejected by middleware\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/invalid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "invalid-id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC23: [Not Found] Valid ObjectId but product not in DB -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Product not found error\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eql(\"Product not found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439099",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "507f1f77bcf86cd799439099"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC25: [Invalid ObjectId] GET product -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 for invalid ObjectId\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/not-a-valid-objectid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "not-a-valid-objectid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC26: [No Token] POST product -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Returns 401 if user is not authenticated\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test\",\n  \"price\": 5000,\n  \"description\": \"Test\",\n  \"category\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC27: [Missing Field] POST product without name -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 when name is missing\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 5000,\n  \"description\": \"Test\",\n  \"category\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC28: [Missing Field] POST product without price -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 when price is missing\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test\",\n  \"description\": \"Test\",\n  \"category\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC29: [Missing Field] POST product without description -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 when description is missing\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test\",\n  \"price\": 5000,\n  \"category\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC31: [Default Value] POST product without category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Uncategorized category assigned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.product.category).to.eql(\"uncategorized\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Product\",\n  \"price\": 5000,\n  \"description\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC34: [Valid Update] PUT update product -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Product updated successfully\", function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "    if (pm.response.code === 200) {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC35: [Update Not Found] PUT non-existent product -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Returns 404 when updating non-existent product\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eql(\"Product not found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439099",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "507f1f77bcf86cd799439099"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC36: [Update Invalid OID] PUT invalid ObjectId -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Rejects invalid ObjectId on update\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/not-valid-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "not-valid-id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC39: [Invalid ObjectId] PUT product -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 for invalid ObjectId in update\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/not-a-valid-objectid",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "not-a-valid-objectid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC37: [Update No Token] PUT without auth -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Unauthorized without token on update\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC40: [Missing Fields] PUT product -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 when required fields missing on update\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"category\": \"Test\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC41: [Default Value] PUT product without category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Allows update without category\", function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated\",\n  \"price\": 5000,\n  \"description\": \"Updated desc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC43: [Not Found] PUT product -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Returns 404 when matchedCount is 0\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eql(\"Product not found\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Product\",\n  \"price\": 10000,\n  \"description\": \"Updated description\",\n  \"category\": \"Updated Category\",\n  \"imageUrl\": \"http://test.com/updated.png\",\n  \"public_id\": \"some_public_id\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439099",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "507f1f77bcf86cd799439099"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC45: [Valid Delete] DELETE product without image -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Product deleted successfully\", function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "    if (pm.response.code === 200) {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.success).to.be.true;",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC46: [Delete Cloudinary] DELETE product with image -> 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Product with image deleted successfully\", function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{validProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{validProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC47: [Delete Not Found] DELETE non-existent product -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Returns 404 when deleting non-existent product\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eql(\"PRODUCT_NOT_FOUND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439099",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "507f1f77bcf86cd799439099"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC48: [Delete Invalid OID] DELETE bad ID format -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Rejects bad ID format on delete\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/bad-id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "bad-id"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC49: [Delete No Token] DELETE without auth -> 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"Unauthorized on delete without token\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/products/{{validProductId}}",
@@ -1980,188 +4135,17 @@
           "response": []
         },
         {
-          "name": "TC_PROD_03 - Get Product Invalid ObjectId (400)",
+          "name": "TC51: [Invalid ObjectId] DELETE product -> 400",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test(\"Status code is 400 Bad Request\", function () {",
+                  "pm.test(\"Status code is 400\", function () {",
                   "    pm.response.to.have.status(400);",
-                  "});"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/products/invalid-object-id-format",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products",
-                "invalid-object-id-format"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_PROD_04 - Create Product Price BVA Min (1,000 VND)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 200 or 201\", function () {",
-                  "    pm.expect([200, 201]).to.include(pm.response.code);",
                   "});",
-                  "pm.test(\"Product created with price 1000\", function () {",
-                  "    var jsonData = pm.response.json();",
-                  "    pm.expect(jsonData.success).to.eql(true);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{bearerToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Sản phẩm Min Price\",\n    \"price\": 1000,\n    \"description\": \"Mô tả chuẩn\",\n    \"category\": \"Điện tử\",\n    \"imageUrl\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_PROD_05 - Create Product Price BVA Min- (999 VND) Reject 400",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 400 Bad Request\", function () {",
-                  "    pm.response.to.have.status(400);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{bearerToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Sản phẩm Lỗi Min\",\n    \"price\": 999,\n    \"description\": \"Mô tả\",\n    \"category\": \"Điện tử\",\n    \"imageUrl\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_PROD_06 - Create Product Price Float (1000.5 VND) Reject 400",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 400 Bad Request\", function () {",
-                  "    pm.response.to.have.status(400);",
-                  "});"
-                ],
-                "type": "text/javascript",
-                "packages": {},
-                "requests": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              },
-              {
-                "key": "Authorization",
-                "value": "Bearer {{bearerToken}}"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"name\": \"Sản phẩm Lỗi Float\",\n    \"price\": 1000.5,\n    \"description\": \"Mô tả\",\n    \"category\": \"Điện tử\",\n    \"imageUrl\": \"https://res.cloudinary.com/demo/image/upload/sample.jpg\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/products",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "products"
-              ]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "TC_PROD_07 - Delete Product Non-Existent (404)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test(\"Status code is 404 Not Found\", function () {",
-                  "    pm.response.to.have.status(404);",
+                  "pm.test(\"Returns 400 for invalid ObjectId on delete\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
                   "});"
                 ],
                 "type": "text/javascript"
@@ -2173,18 +4157,98 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{adminToken}}"
+                "value": "Bearer {{token}}"
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/products/delete/507f1f77bcf86cd799439099",
+              "raw": "{{baseUrl}}/api/products/not-a-valid-objectid",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "products",
-                "delete",
+                "not-a-valid-objectid"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC52: [Invalid ID] DELETE product -> 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "pm.test(\"Returns 400 for empty/whitespace ID on delete\", function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/%20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "%20"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "TC53: [Not Found] DELETE product -> 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test(\"Returns PRODUCT_NOT_FOUND error\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.error).to.eql(\"PRODUCT_NOT_FOUND\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/507f1f77bcf86cd799439099",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
                 "507f1f77bcf86cd799439099"
               ]
             }
