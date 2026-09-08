@@ -8,53 +8,17 @@
 
 ## Ⅰ. DANH MỤC TEST CASES CHI TIẾT (TEST CASES CATALOG)
 
-| Test Case ID   | Module   | Test Summary                                                    | Category (EP/BVA)     | Coverage Contribution (%) |
-| :------------- | :------- | :-------------------------------------------------------------- | :-------------------- | :-----------------------: |
-| **TC_AUTH_01** | Auth     | Đăng ký thành công với Email & Password hợp lệ                  | EP (Valid)            |           3.5%            |
-| **TC_AUTH_02** | Auth     | Đăng ký với Email < 5 chars (Min-)                              | BVA (Robustness)      |           2.5%            |
-| **TC_AUTH_03** | Auth     | Đăng ký với Email 255 chars (Max+)                              | BVA (Robustness)      |           2.5%            |
-| **TC_AUTH_04** | Auth     | Đăng ký với Password < 8 chars (Min-)                           | BVA (Robustness)      |           2.5%            |
-| **TC_AUTH_05** | Auth     | Đăng ký với Email đã tồn tại trong DB                           | EP (Duplicate)        |           2.5%            |
-| **TC_AUTH_06** | Auth     | Đăng nhập thành công trả về JWT Token & User Data               | EP (Valid)            |           3.0%            |
-| **TC_AUTH_07** | Auth     | Đăng nhập với mật khẩu sai (Wrong Password)                     | EP (Invalid)          |           2.5%            |
-| **TC_AUTH_08** | Auth     | Đăng nhập tài khoản bị khóa (`isBlocked = true`)                | EP (Forbidden)        |           3.0%            |
-| **TC_AUTH_09** | Auth     | Lấy thông tin Profile (Ẩn password_hash)                        | EP (Security)         |           2.0%            |
-| **TC_AUTH_10** | Auth     | Đăng xuất người dùng (Clear session_token cookie)               | EP (Valid)            |           2.0%            |
-| **TC_AUTH_11** | User     | Phân trang danh sách User cho Admin (page=1, limit=10)          | EP (Admin)            |           2.5%            |
-| **TC_AUTH_12** | User     | Khóa / Mở khóa người dùng (`toggleBlockUser`)                   | EP (State Change)     |           2.5%            |
-| **TC_CART_01** | Cart     | Lấy giỏ hàng của User đã xác thực                               | EP (Valid)            |           3.0%            |
-| **TC_CART_02** | Cart     | Thêm sản phẩm với `quantity = 0` (Min-)                         | BVA (Robustness)      |           2.5%            |
-| **TC_CART_03** | Cart     | Thêm sản phẩm với `quantity = 1` (Min)                          | BVA (Boundary)        |           3.0%            |
-| **TC_CART_04** | Cart     | Thêm sản phẩm với `quantity = 99` (Max)                         | BVA (Boundary)        |           2.5%            |
-| **TC_CART_05** | Cart     | Thêm sản phẩm với `quantity = 100` (Max+)                       | BVA (Robustness)      |           2.5%            |
-| **TC_CART_06** | Cart     | Thêm sản phẩm với `quantity = 1.5` (Float số lẻ)                | EP (Invalid Type)     |           2.5%            |
-| **TC_CART_07** | Cart     | Thêm sản phẩm với `productId` không tồn tại (404)               | EP (Not Found)        |           2.5%            |
-| **TC_CART_08** | Cart     | Chống giả mạo giá: Server tự tính lại `totalPrice` từ DB        | EP (Security Guard)   |           4.0%            |
-| **TC_CART_09** | Cart     | Cập nhật số lượng về 0 (Tự động xóa khỏi giỏ)                   | EP (State Transition) |           3.0%            |
-| **TC_CART_10** | Cart     | Xóa sản phẩm khỏi giỏ hàng (`deleteCart`)                       | EP (Valid)            |           2.0%            |
-| **TC_CHK_01**  | Checkout | Thanh toán COD thành công & Empty Cart                          | EP (Valid Flow)       |           4.0%            |
-| **TC_CHK_02**  | Checkout | Thanh toán VNPAY thành công & Tạo Payment URL                   | EP (Valid Flow)       |           4.0%            |
-| **TC_CHK_03**  | Checkout | Chặn Checkout khi giỏ hàng rỗng (`products = []`)               | EP (Empty Guard)      |           3.0%            |
-| **TC_CHK_04**  | Checkout | SĐT giao hàng 9 chữ số (Min-)                                   | BVA (Robustness)      |           2.5%            |
-| **TC_CHK_05**  | Checkout | SĐT giao hàng 11 chữ số (Max+)                                  | BVA (Robustness)      |           2.5%            |
-| **TC_CHK_06**  | Checkout | Địa chỉ giao hàng < 10 ký tự (Min-)                             | BVA (Robustness)      |           2.5%            |
-| **TC_CHK_07**  | Checkout | Phương thức thanh toán không hợp lệ (`paypal`, `123`)           | EP (Invalid Enum)     |           2.5%            |
-| **TC_CHK_08**  | Checkout | VNPAY Callback: Giả mạo chữ ký Checksum (`INVALID_HASH`)        | EP (Security Guard)   |           4.0%            |
-| **TC_CHK_09**  | Checkout | VNPAY Callback: Thanh toán thành công (`vnp_ResponseCode = 00`) | State Transition      |           3.5%            |
-| **TC_ORD_01**  | Order    | User lấy danh sách đơn hàng lọc theo `status = pending`         | EP (Valid Filter)     |           2.5%            |
-| **TC_ORD_02**  | Order    | User lấy chi tiết đơn hàng theo `orderId`                       | EP (Valid ID)         |           2.5%            |
-| **TC_ORD_03**  | Order    | User A xóa đơn hàng của User B (Chặn 403 Forbidden)             | EP (Ownership Guard)  |           3.5%            |
-| **TC_ORD_04**  | Order    | User xóa đơn hàng khi đang ở trạng thái `shipping` (Chặn 400)   | State Transition      |           3.0%            |
-| **TC_ORD_05**  | Order    | User thường truy cập route `/api/orders/admin` (Chặn 403)       | EP (Role Guard)       |           3.0%            |
-| **TC_ORD_06**  | Order    | Admin chuyển trạng thái từ `pending` sang `processing`          | State Machine         |           3.0%            |
-| **TC_ORD_07**  | Order    | Admin chuyển trạng thái bất hợp lệ `success` về `pending`       | State Machine         |           3.0%            |
-| **TC_PROD_01** | Product  | Phân trang danh sách sản phẩm (Clamp `limit = 500` về `100`)    | BVA (Clamp Guard)     |           2.5%            |
-| **TC_PROD_02** | Product  | Fallback `page = -5` hoặc chuỗi rác về `page = 1`               | EP (Fallback Guard)   |           2.5%            |
-| **TC_PROD_03** | Product  | Lấy sản phẩm với ObjectId hợp lệ vs không hợp lệ                | EP (ObjectId Check)   |           2.5%            |
-| **TC_PROD_04** | Product  | Tạo sản phẩm với `price = 1,000 VND` (Min)                      | BVA (Boundary)        |           3.0%            |
-| **TC_PROD_05** | Product  | Tạo sản phẩm với `price = 999 VND` (Min-)                       | BVA (Robustness)      |           2.5%            |
-| **TC_PROD_06** | Product  | Tạo sản phẩm với `price = 1000.5 VND` (Float lẻ)                | EP (Invalid Type)     |           2.5%            |
-| **TC_PROD_07** | Product  | Xóa sản phẩm có hình ảnh trên Cloudinary                        | EP (Cleanup)          |           2.5%            |
+Nguồn chuẩn của catalog là năm file test hiện hành trong `be/src/tests/`. Các mã `TC_*` trong các báo cáo module cũ chỉ được xem là nhãn tài liệu, không dùng để suy ra số lượng test hiện tại.
+
+| Test Case ID | Module      | Test Summary                                                                    | Category (EP/BVA)           | Coverage Contribution (%) |
+| :----------- | :---------- | :------------------------------------------------------------------------------ | :-------------------------- | :-----------------------: |
+| **AUTH**     | Auth & User | `auth.test.ts`: register/login/logout/profile và admin user management          | EP/BVA + white-box          |         27 tests          |
+| **CART**     | Cart        | `cart.test.ts`: get/add/update/delete, price tampering và schema quantity       | EP/BVA + white-box          |         21 tests          |
+| **PRODUCT**  | Product     | `product.test.ts`: CRUD, price boundaries, pagination, ObjectId và Cloudinary   | EP/BVA + white-box          |         56 tests          |
+| **ORDER**    | Order       | `order.test.ts`: role/ownership guards, lifecycle, normalization và error paths | EP/state + white-box        |         33 tests          |
+| **CHECKOUT** | Checkout    | `checkout.test.ts`: cart/shipping boundaries, COD/VNPAY và callback HMAC        | EP/BVA/security + white-box |         25 tests          |
+
+**Tổng số test nghiệp vụ:** 162.
 
 ---
 
@@ -111,7 +75,7 @@ flowchart TD
 ```
 
 - **Cyclomatic Complexity $V(G)$ Module Auth**:  
-  $$V(G) = P + 1 = 9 + 1 = 10$$ (với 9 Decision Nodes `D1` $\to$ `D9`).
+  $$V(G) = P + 1 = 9 + 1 = 10 \quad (\text{với 9 Decision Nodes } D_1 \to D_9)$$
 
 ---
 
@@ -160,8 +124,8 @@ flowchart TD
     N18 --> N19["Node 19: Return 200 Updated Cart<br/>📌 <b>Path C3</b> | TC_CART_09, TC_CART_10"]
 ```
 
-- **Cyclomatic Complexity $V(G)$ Module Cart**:  
-  $$V(G) = P + 1 = 7 + 1 = 8$$ (với 7 Decision Nodes `D1` $\to$ `D7`).
+- **Cyclomatic Complexity $V(G)$ Module Cart**:
+  $$V(G) = P + 1 = 7 + 1 = 8 \quad (\text{với 7 Decision Nodes } D_1 \to D_7)$$
 
 ---
 
@@ -217,7 +181,7 @@ flowchart TD
 ```
 
 - **Cyclomatic Complexity $V(G)$ Module Checkout**:  
-  $$V(G) = P + 1 = 6 + 1 = 7$$ (với 6 Decision Nodes `D1` $\to$ `D6`).
+  $$V(G) = P + 1 = 6 + 1 = 7 \quad (\text{với 6 Decision Nodes } D_1 \to D_6)$$
 
 ---
 
@@ -269,7 +233,7 @@ flowchart TD
 ```
 
 - **Cyclomatic Complexity $V(G)$ Module Order**:  
-  $$V(G) = P + 1 = 8 + 1 = 9$$ (với 8 Decision Nodes `D1` $\to$ `D8`).
+  $$V(G) = P + 1 = 8 + 1 = 9 \quad (\text{với 8 Decision Nodes } D_1 \to D_8)$$
 
 ---
 
@@ -325,7 +289,7 @@ flowchart TD
 ```
 
 - **Cyclomatic Complexity $V(G)$ Module Product**:  
-  $$V(G) = P + 1 = 8 + 1 = 9$$ (với 8 Decision Nodes `D1` $\to$ `D8`).
+  $$V(G) = P + 1 = 8 + 1 = 9 \quad (\text{với 8 Decision Nodes } D_1 \to D_8)$$
 
 ---
 
@@ -335,28 +299,31 @@ Dựa trên công thức **Cyclomatic Complexity $V(G) = P + 1$** và kỹ thu�
 
 | Module                 | Số nút quyết định ($P$) | Độ phức tạp $V(G)$ | Số Test Cases tối thiểu (Basis Paths) | Số Test Cases thực tế triển khai (kèm Robustness BVA/EP) |
 | :--------------------- | :---------------------: | :----------------: | :-----------------------------------: | :------------------------------------------------------: |
-| **Auth & User**        |            9            |         10         |                  10                   |                          **12**                          |
-| **Cart Management**    |            7            |         8          |                   8                   |                          **10**                          |
-| **Checkout & Payment** |            6            |         7          |                   7                   |                          **9**                           |
-| **Order Management**   |            8            |         9          |                   9                   |                          **7**                           |
-| **Product Catalog**    |            8            |         9          |                   9                   |                          **7**                           |
-| **TỔNG CỘNG**          |         **38**          |       **43**       |                **43**                 |                          **45**                          |
+| **Auth & User**        |            9            |         10         |                  10                   |                          **27**                          |
+| **Cart Management**    |            7            |         8          |                   8                   |                          **21**                          |
+| **Checkout & Payment** |            6            |         7          |                   7                   |                          **25**                          |
+| **Order Management**   |            8            |         9          |                   9                   |                          **33**                          |
+| **Product Catalog**    |            8            |         9          |                   9                   |                          **56**                          |
+| **TỔNG CỘNG**          |         **38**          |       **43**       |                **43**                 |                         **162**                          |
 
 ---
 
 ## Ⅳ. TỔNG KẾT ĐỘ BAO PHỦ DỰ ÁN (PROJECT COVERAGE SUMMARY)
 
-| Module / Component                                | Statement Coverage (%) | Branch Coverage (%) | Function Coverage (%) | Line Coverage (%) |    Đánh giá QA     |
-| :------------------------------------------------ | :--------------------: | :-----------------: | :-------------------: | :---------------: | :----------------: |
-| **Auth & User Management** (`user.controller.ts`) |         100.0%         |       100.0%        |        100.0%         |      100.0%       | **PASSED (Green)** |
-| **Cart Management** (`cart.controller.ts`)        |         100.0%         |       100.0%        |        100.0%         |      100.0%       | **PASSED (Green)** |
-| **Checkout & Payment** (`checkout.controller.ts`) |         100.0%         |       100.0%        |        100.0%         |      100.0%       | **PASSED (Green)** |
-| **Order Management** (`order.controller.ts`)      |         100.0%         |       100.0%        |        100.0%         |      100.0%       | **PASSED (Green)** |
-| **Product Catalog** (`product.controller.ts`)     |         100.0%         |       100.0%        |        100.0%         |      100.0%       | **PASSED (Green)** |
-| **TOÀN BỘ DỰ ÁN (OVERALL PROJECT)**               |       **100.0%**       |     **100.0%**      |      **100.0%**       |    **100.0%**     |    **XUẤT SẮC**    |
+| Module / Component                                | Statement Coverage (%) | Branch Coverage (%) | Function Coverage (%) | Line Coverage (%) |               Đánh giá QA                |
+| :------------------------------------------------ | :--------------------: | :-----------------: | :-------------------: | :---------------: | :--------------------------------------: |
+| **Auth & User Management** (`user.controller.ts`) |     100.0% (95/95)     |   100.0% (29/29)    |     100.0% (7/7)      |  100.0% (95/95)   |            **PASSED (Green)**            |
+| **Cart Management** (`cart.controller.ts`)        |    100.0% (112/112)    |   100.0% (34/34)    |    100.0% (13/13)     | 100.0% (112/112)  |            **PASSED (Green)**            |
+| **Checkout & Payment** (`checkout.controller.ts`) |     100.0% (85/85)     |   100.0% (39/39)    |     100.0% (6/6)      |  100.0% (85/85)   |            **PASSED (Green)**            |
+| **Order Management** (`order.controller.ts`)      |    100.0% (133/133)    |   100.0% (62/62)    |    100.0% (13/13)     | 100.0% (133/133)  |            **PASSED (Green)**            |
+| **Product Catalog** (`product.controller.ts`)     |     100.0% (94/94)     |   100.0% (48/48)    |     100.0% (6/6)      |  100.0% (94/94)   |            **PASSED (Green)**            |
+| **TOÀN BỘ 5 MODULE NGHIỆP VỤ**                    |       **100.0%**       |     **100.0%**      |      **100.0%**       |    **100.0%**     |      **PASSED (controller scope)**       |
+| **TOÀN BỘ BACKEND TEST RUN**                      |       **97.62%**       |     **97.95%**      |      **91.13%**       |    **97.68%**     | **9/10 suites pass; 207/217 tests pass** |
+
+**Uncovered lines:** Không có trong năm controller nghiệp vụ. Ở phạm vi toàn backend, `src/lib/mongodb-wrapper.ts` còn các dòng `29, 33, 46-78, 96-97` chưa phủ; đây là nguyên nhân chính làm coverage tổng thể thấp hơn 100% và liên quan cùng suite đang fail do mock client thiếu `.on()`.
 
 ### 🏆 KẾT LUẬN & KIẾN NGHỊ CỦA QA LEAD:
 
-1. **Độ phủ kiểm thử tuyệt đối**: 100% tất cả các câu lệnh (Statements), tất cả các nhánh điều kiện (Branches) và tất cả các hàm xử lý (Functions) đã được kiểm thử độc lập trên RAM thông qua Jest Mocking và Supertest.
-2. **Khả năng tự động hóa**: Toàn bộ 5 bộ Postman Collections độc lập đã được xuất ra thư mục `Doc/` với đầy đủ Test Scripts `pm.test()`, cho phép CI/CD Pipeline chạy tự động qua Newman CLI.
-3. **Bảo mật & Tính toàn vẹn**: Đã vá và kiểm thử toàn diện các lỗ hổng bảo mật nghiêm trọng như băm mật khẩu `bcrypt`, xác thực chữ ký VNPay Checksum `HMAC-SHA512`, và rào chắn chống giả mạo giá tiền giỏ hàng từ Client.
+1. **Độ phủ controller nghiệp vụ**: Năm controller Auth, Cart, Checkout, Order và Product đều đạt 100% Statements, Branches, Functions và Lines theo coverage thực tế; không có uncovered line trong phạm vi này.
+2. **Kết quả chạy toàn backend**: Lệnh `cd be && npm test -- --coverage` chạy 10 suite, trong đó 9 pass và `mongodb-wrapper.test.ts` fail 10 test do mock client thiếu `.on()`. Vì vậy toàn backend không đạt 100% pass.
+3. **Bảo mật & Tính toàn vẹn**: Các test hiện hành kiểm tra bcrypt, blocked account, admin/ownership guards, HMAC-SHA512 VNPay callback, chống giả mạo giá cart và Cloudinary cleanup.

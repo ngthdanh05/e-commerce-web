@@ -8,18 +8,18 @@
 
 ### 1.1. Module/API đã phân tích
 
-| Module                  | API/nhóm route đã rà soát                                                                | Cơ chế kiểm tra đầu vào                                                                       |
-| ----------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Auth                    | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`               | Zod ở register/login; controller kiểm tra thiếu field                                         |
-| User/Profile            | `GET /api/profile`                                                                       | JWT middleware; không có schema query                                                         |
-| Cart                    | `GET /api/cart`, `POST /api/cart/add`, `PUT /api/cart/update`, `DELETE /api/cart/delete` | Zod cho body add/update/delete; controller kiểm tra tồn tại sản phẩm/giỏ hàng                 |
-| Product                 | `GET /api/products`, `GET/POST/PUT/DELETE /api/products/:id`                             | Zod cho query, body create/update và ObjectId params                                          |
-| Admin product           | `/api/admin/products...`                                                                 | Tái sử dụng Zod product; quyền admin chưa được gắn vào route                                  |
-| Category                | `/api/admin/categories...`                                                               | Chỉ kiểm tra thủ công trong controller; không có schema riêng                                 |
-| Order                   | `/api/orders...`, `/api/admin/orders...`                                                 | Auth; status admin kiểm tra bằng mảng giá trị; các query/page/limit chưa có schema            |
-| Checkout/VNPAY          | `POST /api/checkout/create`, `GET /api/checkout/vnpay-callback`                          | Không có schema; kiểm tra type payment bằng nhánh controller; chữ ký callback đang bị comment |
-| Image Cloudinary/GridFS | `/api/images/upload`, `/get`, `/delete`                                                  | Multer + kiểm tra thủ công mimetype/kích thước; chưa giới hạn query và ID đồng nhất           |
-| Dashboard               | `GET /api/admin/dashboard`                                                               | Auth middleware; không có schema đầu vào                                                      |
+| Module                  | API/nhóm route đã rà soát                                                                | Cơ chế kiểm tra đầu vào                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Auth                    | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout`               | Zod ở register/login; controller kiểm tra thiếu field                                   |
+| User/Profile            | `GET /api/profile`                                                                       | JWT middleware; không có schema query                                                   |
+| Cart                    | `GET /api/cart`, `POST /api/cart/add`, `PUT /api/cart/update`, `DELETE /api/cart/delete` | Zod cho body add/update/delete; controller kiểm tra tồn tại sản phẩm/giỏ hàng           |
+| Product                 | `GET /api/products`, `GET/POST/PUT/DELETE /api/products/:id`                             | Zod cho query, body create/update và ObjectId params                                    |
+| Admin product           | `/api/admin/products...`                                                                 | Tái sử dụng Zod product; quyền admin chưa được gắn vào route                            |
+| Category                | `/api/admin/categories...`                                                               | Chỉ kiểm tra thủ công trong controller; không có schema riêng                           |
+| Order                   | `/api/orders...`, `/api/admin/orders...`                                                 | Auth; status admin kiểm tra bằng mảng giá trị; các query/page/limit chưa có schema      |
+| Checkout/VNPAY          | `POST /api/checkout`, `GET /api/checkout/vnpay-callback`                                 | Zod `checkoutSchema`; kiểm tra cart, shippingInfo, payment type và HMAC-SHA512 callback |
+| Image Cloudinary/GridFS | `/api/images/upload`, `/get`, `/delete`                                                  | Multer + kiểm tra thủ công mimetype/kích thước; chưa giới hạn query và ID đồng nhất     |
+| Dashboard               | `GET /api/admin/dashboard`                                                               | Auth middleware; không có schema đầu vào                                                |
 
 Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation tập trung ở `be/src/schemas` bằng Zod và một số `if` trong controller.
 
@@ -32,7 +32,7 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 5. Pagination product: page mặc định 1, giới hạn 1..1000; limit mặc định 10, giới hạn 1..100. Giá trị sai/nhỏ hơn 1 được fallback, limit lớn hơn 100 được clamp.
 6. Category: `category_name` và `category_id` phải truthy; category_id được slugify và phải chưa tồn tại. Chưa có giới hạn độ dài, kiểu chuỗi hoặc kiểm tra sau chuẩn hóa không bị rỗng.
 7. Order: status admin chỉ nhận `pending`, `success`, `failed`; user chỉ được xóa order của chính mình.
-8. Checkout: chỉ có hai luồng `cod` và `vnpay`; checkout phải có cart. `shippingInfo` và các field thanh toán chưa có schema kiểu/độ dài/định dạng.
+8. Checkout: chỉ có hai luồng `cod` và `vnpay`; checkout phải có cart hợp lệ. `checkoutSchema` kiểm tra `typePayment`, `fullName`, số điện thoại, địa chỉ và email; callback kiểm tra HMAC-SHA512 trước khi cập nhật trạng thái.
 9. Image: phải có file, mimetype bắt đầu bằng `image/`, kích thước không vượt 5 MiB theo code hiện tại. Cloudinary delete cần `public_id`; GridFS delete cần `id`.
 10. Auth middleware: bắt buộc cookie `session_token` hoặc Bearer token hợp lệ. `isAdmin` có tồn tại nhưng các route `/api/admin/*` hiện chỉ dùng `verifyToken`, chưa dùng `isAdmin`.
 
@@ -42,20 +42,20 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 
 ### 2.1. Auth - Register
 
-| Field / Attribute | Kỹ thuật áp dụng | Vùng tương đương / Biên       | Input Test Value                                          | Expected Outcome                            | Status trong Codebase (Đã handle / Chưa handle)                                                               |
-| ----------------- | ---------------- | ----------------------------- | --------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| name              | BVA              | Min-1 / Min / Min+1           | `a` / `ab` / `abc`                                        | 400 / 200 / 200                             | Đã handle: Zod `.min(2)`                                                                                      |
-| name              | BVA              | Nominal / Max-1 / Max / Max+1 | 10 / 49 / 50 / 51 ký tự                                   | 200 / 200 / 200 / 400                       | Đã handle: `.max(50)`                                                                                         |
-| name              | EP               | Invalid type/blank sau trim   | `123`, `"   "`, null, thiếu field                         | 400                                         | Đã handle kiểu và min sau trim; controller cũng có guard                                                      |
-| email             | BVA              | Min-1 / Min / Min+1           | 4 ký tự hợp lệ về độ dài / 5 / 6                          | 400 / phụ thuộc regex / 200 nếu đúng format | Đã handle `.min(5)` và regex; biên 5 bị test hiện tại kỳ vọng sai với `a@b.c`                                 |
-| email             | BVA              | Max-1 / Max / Max+1           | 253 / 254 / 255 ký tự, format hợp lệ                      | 200 / 200 / 400                             | Đã handle `.max(254)`                                                                                         |
-| email             | EP               | Valid format / invalid format | `user@example.com` / thiếu `@`, domain hoặc có whitespace | 200 / 400                                   | Đã handle regex; regex đăng ký yêu cầu TLD tối thiểu 2 ký tự                                                  |
-| email             | EP               | Canonicalization              | `Test@Example.COM`                                        | Lưu `test@example.com`                      | Đã handle `.trim().toLowerCase()`                                                                             |
-| password          | BVA              | Min-1 / Min / Min+1           | 7 / 8 / 9 ký tự, đủ complexity                            | 400 / 200 / 200                             | Đã handle `.min(8)`                                                                                           |
-| password          | BVA              | Max-1 / Max / Max+1           | 63 / 64 / 65 ký tự, đủ complexity                         | 200 / 200 / 400                             | Đã handle `.max(64)`                                                                                          |
-| password          | EP               | Thiếu từng nhóm ký tự         | thiếu hoa, thường, số hoặc special                        | 400                                         | Đã handle 4 regex complexity                                                                                  |
-| password          | EP               | Invalid type/empty            | number, null, `""`, thiếu field                           | 400                                         | Đã handle Zod và controller                                                                                   |
-| unknown fields    | EP               | Field ngoài contract          | `{role:"admin"}` kèm payload hợp lệ                       | Không được phép ghi đè role                 | Chưa handle rõ: `z.object` không khai báo `.strict()`; cần xác nhận hành vi strip/error theo policy mong muốn |
+| Field / Attribute | Kỹ thuật áp dụng | Vùng tương đương / Biên       | Input Test Value                                          | Expected Outcome                        | Status trong Codebase (Đã handle / Chưa handle)                                                               |
+| ----------------- | ---------------- | ----------------------------- | --------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| name              | BVA              | Min-1 / Min / Min+1           | `a` / `ab` / `abc`                                        | 400 / 200 / 200                         | Đã handle: Zod `.min(2)`                                                                                      |
+| name              | BVA              | Nominal / Max-1 / Max / Max+1 | 10 / 49 / 50 / 51 ký tự                                   | 200 / 200 / 200 / 400                   | Đã handle: `.max(50)`                                                                                         |
+| name              | EP               | Invalid type/blank sau trim   | `123`, `"   "`, null, thiếu field                         | 400                                     | Đã handle kiểu và min sau trim; controller cũng có guard                                                      |
+| email             | BVA              | Min-1 / Min / Min+1           | 4 ký tự / 5 ký tự / 6 ký tự, đồng thời phải đúng regex    | 400 / phụ thuộc regex / phụ thuộc regex | Đã handle `.min(5)` và regex; độ dài 5 hoặc 6 không tự động đồng nghĩa email hợp lệ                           |
+| email             | BVA              | Max-1 / Max / Max+1           | 253 / 254 / 255 ký tự, format hợp lệ                      | 200 / 200 / 400                         | Đã handle `.max(254)`                                                                                         |
+| email             | EP               | Valid format / invalid format | `user@example.com` / thiếu `@`, domain hoặc có whitespace | 200 / 400                               | Đã handle regex; regex đăng ký yêu cầu TLD tối thiểu 2 ký tự                                                  |
+| email             | EP               | Canonicalization              | `Test@Example.COM`                                        | Lưu `test@example.com`                  | Đã handle `.trim().toLowerCase()`                                                                             |
+| password          | BVA              | Min-1 / Min / Min+1           | 7 / 8 / 9 ký tự, đủ complexity                            | 400 / 200 / 200                         | Đã handle `.min(8)`                                                                                           |
+| password          | BVA              | Max-1 / Max / Max+1           | 63 / 64 / 65 ký tự, đủ complexity                         | 200 / 200 / 400                         | Đã handle `.max(64)`                                                                                          |
+| password          | EP               | Thiếu từng nhóm ký tự         | thiếu hoa, thường, số hoặc special                        | 400                                     | Đã handle 4 regex complexity                                                                                  |
+| password          | EP               | Invalid type/empty            | number, null, `""`, thiếu field                           | 400                                     | Đã handle Zod và controller                                                                                   |
+| unknown fields    | EP               | Field ngoài contract          | `{role:"admin"}` kèm payload hợp lệ                       | Không được phép ghi đè role             | Chưa handle rõ: `z.object` không khai báo `.strict()`; cần xác nhận hành vi strip/error theo policy mong muốn |
 
 ### 2.2. Auth - Login và User
 
@@ -102,16 +102,16 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 
 ### 2.5. Category, Order và Checkout
 
-| Field / Attribute      | Kỹ thuật áp dụng | Vùng tương đương / Biên                                      | Input Test Value                                             | Expected Outcome                                  | Status trong Codebase (Đã handle / Chưa handle)                                          |
-| ---------------------- | ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| category.category_name | EP               | Missing/empty / non-empty / wrong type                       | thiếu, `""`, `"Điện thoại"`, 123                             | 400 / 400 / 200 / 400                             | Chưa handle đầy đủ: chỉ truthy, không có type/length/trim                                |
-| category.category_id   | EP               | Missing/empty / valid slug source / special-only / duplicate | thiếu, `""`, `phone case`, `!!!`, ID trùng                   | 400 / 400 / 200 / 400                             | Đã handle truthy + duplicate; chưa reject slug rỗng sau sanitize                         |
-| category/:id           | EP               | Valid/invalid/nonexistent ObjectId                           | 24 hex / `abc` / ID lạ                                       | 200 / 400 / 404                                   | Đã handle format trong controller; admin route chưa dùng schema cho delete               |
-| order.status           | EP               | Allowed / invalid / missing                                  | pending, success, failed / `paid`, null                      | 200 / 400                                         | Đã handle admin update bằng `includes`; chưa có Zod schema dùng chung                    |
-| order page/limit       | BVA/EP           | <1 / nominal / negative / huge / text                        | 0, 1, 10, -1, 999999, abc                                    | Nên reject hoặc clamp ổn định                     | Chưa handle: parseInt fallback cho một số trường hợp nhưng nhận số âm và không max       |
-| checkout.typePayment   | EP               | Valid COD / valid VNPAY / invalid/missing                    | cod / vnpay / bank, thiếu                                    | 200 nếu cart tồn tại / 200 nếu cart tồn tại / 400 | Đã handle enum bằng nhánh `if`; chưa validate trước khi truy vấn/ghi và chưa có schema   |
-| checkout.shippingInfo  | EP/BVA           | Missing, wrong type, empty, nominal, oversized               | thiếu, object sai, field rỗng, dữ liệu hợp lệ, chuỗi rất dài | 400 với invalid; 200 với valid                    | Chưa handle: không kiểm tra field, format phone/email, length hoặc nesting               |
-| VNPAY callback         | EP               | Missing/malformed response/order info / valid response       | thiếu `vnp_OrderInfo`, orderInfo bất thường, code 00/khác    | 400 hoặc 404 / redirect success/failure           | Chưa handle: gọi `.replace` trên undefined có thể 500; kiểm tra secure hash đang comment |
+| Field / Attribute      | Kỹ thuật áp dụng | Vùng tương đương / Biên                                      | Input Test Value                                                            | Expected Outcome                                  | Status trong Codebase (Đã handle / Chưa handle)                                                     |
+| ---------------------- | ---------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| category.category_name | EP               | Missing/empty / non-empty / wrong type                       | thiếu, `""`, `"Điện thoại"`, 123                                            | 400 / 400 / 200 / 400                             | Chưa handle đầy đủ: chỉ truthy, không có type/length/trim                                           |
+| category.category_id   | EP               | Missing/empty / valid slug source / special-only / duplicate | thiếu, `""`, `phone case`, `!!!`, ID trùng                                  | 400 / 400 / 200 / 400                             | Đã handle truthy + duplicate; chưa reject slug rỗng sau sanitize                                    |
+| category/:id           | EP               | Valid/invalid/nonexistent ObjectId                           | 24 hex / `abc` / ID lạ                                                      | 200 / 400 / 404                                   | Đã handle format trong controller; admin route chưa dùng schema cho delete                          |
+| order.status           | EP               | Allowed / invalid / missing                                  | pending, success, failed / `paid`, null                                     | 200 / 400                                         | Đã handle admin update bằng `includes`; chưa có Zod schema dùng chung                               |
+| order page/limit       | BVA/EP           | <1 / nominal / negative / huge / text                        | 0, 1, 10, -1, 999999, abc                                                   | Nên reject hoặc clamp ổn định                     | Chưa handle: parseInt fallback cho một số trường hợp nhưng nhận số âm và không max                  |
+| checkout.typePayment   | EP               | Valid COD / valid VNPAY / invalid/missing                    | cod / vnpay / bank, thiếu                                                   | 200 nếu cart tồn tại / 200 nếu cart tồn tại / 400 | Đã handle enum bằng nhánh `if`; chưa validate trước khi truy vấn/ghi và chưa có schema              |
+| checkout.shippingInfo  | EP/BVA           | Missing, wrong type, empty, nominal, oversized               | thiếu, object sai, phone 9/10/11 số, address 9/10/200/201 ký tự             | 400 với invalid; 200 với valid                    | Đã handle bởi `checkoutSchema`; test thực tế phủ phone, address và empty-cart guards                |
+| VNPAY callback         | EP               | Missing/malformed response/order info / valid response       | hash sai, hash đúng + code `00`, hash đúng + code khác, order không tồn tại | 400 / 404 / redirect success/failure              | Đã handle HMAC-SHA512; test thực tế phủ tampered hash, success, failure, missing secret và DB error |
 
 ### 2.6. Image và upload
 
@@ -125,19 +125,30 @@ Không tìm thấy thư mục DTO riêng. Không sử dụng Joi; validation t�
 
 ### 2.7. Bằng chứng kiểm thử đã chạy
 
-Lệnh thực tế: `cd be && npm test -- --runInBand`.
+Lệnh thực tế: `cd be && npm test -- --coverage`.
 
-- 3 test suite: 2 pass, 1 fail.
-- 33 test: 32 pass, 1 fail.
-- Failure: `src/tests/auth.test.ts`, case email `a@b.c` kỳ vọng 200 nhưng thực tế 400. Nguyên nhân là regex register yêu cầu phần TLD có ít nhất 2 ký tự (`{2,}`), trong khi test dùng TLD một ký tự.
-- Các test Auth/Cart/Product đã bao phủ một số biên quantity, price, password, email, ObjectId và pagination, nhưng chưa bao phủ Category, Order, Checkout, Image và phần lớn query/admin authorization.
+- 10 test suite được Jest phát hiện; 9 suite pass và 1 suite fail.
+- 217 test được chạy: 207 pass, 10 fail. Toàn bộ 10 lỗi nằm trong `src/tests/mongodb-wrapper.test.ts`, do mock Mongo client thiếu hàm `.on()`; không thuộc năm module nghiệp vụ trong phạm vi báo cáo này.
+- Năm file test nghiệp vụ có 162 test: Auth 27, Cart 21, Product 56, Order 33, Checkout 25; các test này pass trong lần chạy coverage.
+- Coverage của năm controller mục tiêu đạt 100% Statements, Branches, Functions và Lines; không có uncovered line trong các controller này.
+- Các báo cáo module cũ có test ID và số lượng không còn khớp hoàn toàn với mã test hiện tại; catalog dưới đây ưu tiên tên test và hành vi trong `be/src/tests/*.test.ts`.
 - `npm run build` chưa nghiệm thu được: TypeScript dừng ở `be/tsconfig.json`, option `ignoreDeprecations: "6.0"` bị compiler hiện tại báo `TS5103` là giá trị không hợp lệ.
+
+### 2.8. Catalog test case hiện hành theo mã nguồn
+
+| Module      | File test thực tế               | Số test | EP/BVA và nhánh chính được thực thi                                                                                                                                                      |
+| :---------- | :------------------------------ | ------: | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth & User | `be/src/tests/auth.test.ts`     |      27 | Register hợp lệ/trùng email/DB error; login đúng, sai mật khẩu, blocked, không tìm thấy; logout; profile; admin pagination, block/unblock/delete; guard trực tiếp và logout catch        |
+| Cart        | `be/src/tests/cart.test.ts`     |      21 | Cart rỗng/có dữ liệu; add item mới, item trùng, item khác, missing ID, product 404, price tampering; update quantity 0/>0; delete; auth/DB error; schema quantity 0, 1, 99, 100 và float |
+| Product     | `be/src/tests/product.test.ts`  |      56 | Price 999/1000/1500.5/5000/1,000,000,000/1,000,000,001; pagination fallback/clamp; ObjectId; CRUD, auth, DB error, category/image fallback và Cloudinary cleanup                         |
+| Order       | `be/src/tests/order.test.ts`    |      33 | Admin guard; ownership; delete theo trạng thái; transition hợp lệ/bất hợp lệ; status invalid; list/detail normalization, missing order, pagination/fallback, create và catch paths       |
+| Checkout    | `be/src/tests/checkout.test.ts` |      25 | Empty cart; phone 9/10/11 và prefix; address 9/10/200/201; COD/VNPAY/invalid payment; HMAC tampering/success/failure, missing secret, missing order, query array và DB errors            |
 
 ## 3. ĐÁNH GIÁ CHẤT LƯỢNG CODEBASE HIỆN TẠI
 
 ### 3.1. Vị trí thiếu hoặc lệch validation
 
-- [be/src/schemas/auth.schema.ts](../../be/src/schemas/auth.schema.ts): register email có hai `.min()` liên tiếp; case 5 ký tự `a@b.c` vượt min length nhưng không vượt regex. Cần thống nhất contract giữa schema và test.
+- [be/src/schemas/auth.schema.ts](../../be/src/schemas/auth.schema.ts): register email áp dụng đồng thời giới hạn độ dài và regex; test cần dùng dữ liệu vừa đạt ngưỡng độ dài vừa hợp lệ về cấu trúc email.
 - [be/src/schemas/product.schema.ts](../../be/src/schemas/product.schema.ts): `updateProductSchema = createProductSchema.partial()`, nhưng [be/src/controllers/product.controller.ts](../../be/src/controllers/product.controller.ts) vẫn bắt buộc `name`, `price`, `description`. Đây là mâu thuẫn giữa ý nghĩa PATCH/partial và hành vi controller.
 - [be/src/controllers/category.controller.ts](../../be/src/controllers/category.controller.ts): category chỉ dùng truthy check; không giới hạn độ dài, không ép kiểu chuỗi, không trim, không kiểm tra kết quả slugify khác rỗng. `category_id` trùng sau normalize cũng cần unique index DB, không chỉ `findOne` trước insert.
 - [be/src/controllers/user.controller.ts](../../be/src/controllers/user.controller.ts): `new ObjectId(id)` trong toggle/delete user không có guard `ObjectId.isValid`; ID sai có nguy cơ thành 500. Pagination user không có max và có thể nhận page/limit âm.
@@ -229,7 +240,7 @@ Dùng Multer `limits.fileSize = 5 * 1024 * 1024`, thống nhất policy `<5 MiB`
 
 **f. Bổ sung test nghiệm thu tối thiểu**
 
-1. Sửa hoặc xác nhận contract email `a@b.c`, sau đó thêm test cho 4/5/6 và 253/254/255 ký tự với email thực sự hợp lệ về format.
+1. Bổ sung test email tại các mốc 4/5/6 và 253/254/255 ký tự bằng dữ liệu thực sự hợp lệ về format; không dùng độ dài đơn độc để kết luận email hợp lệ.
 2. Thêm EP/BVA cho Category, Checkout shippingInfo, Order status/ownership, Image 5 MiB và malformed IDs.
 3. Thêm test bảo mật xác nhận user thường không truy cập được `/api/admin/*`.
 4. Thêm test duplicate race/unique index và callback VNPAY sai chữ ký.
