@@ -1,567 +1,774 @@
-# 📄 BÁO CÁO KIỂM THỬ TÍNH NĂNG CHECKOUT & PAYMENT
+# BÁO CÁO KIỂM THỬ MODULE CHECKOUT & PAYMENT
 
-## 🟢 PHẦN 1: BỘ TEST CASE BLACKBOX (EP + BVA)
+## 1. TỔNG QUAN
 
-### 1. Phân tích Phân vùng tương đương (Equivalence Partitioning - EP) & Giá trị biên (Boundary Value Analysis - BVA)
+### 1.1. Phạm vi kiểm thử
 
-#### Bảng 1.1: Phân tích Phân vùng tương đương (EP) cho các tham số Checkout
+**Module:** Checkout & Payment  
+**Controller chính:** `src/controllers/checkout.controller.ts`  
+**File test:** `src/tests/checkout.test.ts`  
+**API chính:**
 
-| Tham số đầu vào | Ràng buộc nghiệp vụ & Schema Zod | Phân vùng hợp lệ (Valid EP) | Phân vùng không hợp lệ (Invalid EP) |
-| :--- | :--- | :--- | :--- |
-| **`shippingInfo.phoneNumber`** | Chuỗi 10 chữ số, bắt đầu bằng các đầu số viễn thông Việt Nam chuẩn: `^(03\\\|05\\\|07\\\|08\\\|09)[0-9]{8}$`. | • **EP-V1**: Chuỗi đúng 10 số với đầu số hợp lệ (vd: `"0912345678"`, `"0987654321"`, `"0381234567"`). | • **EP-I1**: Độ dài < 10 chữ số.<br>• **EP-I2**: Độ dài > 10 chữ số.<br>• **EP-I3**: Đúng 10 chữ số nhưng sai đầu số (vd: `"0123456789"`).<br>• **EP-I4**: Chứa ký tự chữ hoặc ký tự đặc biệt. |
-| **`shippingInfo.address`** | Chuỗi địa chỉ có độ dài từ 10 đến 200 ký tự. | • **EP-V2**: Chuỗi có độ dài `[10, 200]`. | • **EP-I5**: Bỏ trống hoặc độ dài < 10 (`ADDRESS_TOO_SHORT`).<br>• **EP-I6**: Độ dài > 200 (`ADDRESS_TOO_LONG`). |
-| **`shippingInfo.fullName`** | Chuỗi họ tên có độ dài `[1, 100]`. | • **EP-V3**: Chuỗi `1 <= length <= 100`. | • **EP-I7**: Chuỗi rỗng.<br>• **EP-I8**: Vượt quá 100 ký tự. |
-| **`shippingInfo.email`** | Chuỗi email hợp lệ. | • **EP-V4**: Email đúng định dạng (vd: `"test@example.com"`). | • **EP-I9**: Email sai định dạng (`INVALID_EMAIL`). |
-| **`typePayment`** | Enum: `["cod", "vnpay"]`. | • **EP-V5**: `"cod"`.<br>• **EP-V6**: `"vnpay"`. | • **EP-I10**: Giá trị không hỗ trợ như `"paypal"`, `"stripe"`, `"momo"`.<br>• **EP-I11**: Chuỗi rỗng hoặc sai kiểu dữ liệu (`123`, `true`, `null`). |
-| **`cart.products`** | Giỏ hàng phải tồn tại, `products` phải là Array có `length > 0` và `totalPrice > 0`. | • **EP-V7**: Có ít nhất 1 sản phẩm và `totalPrice > 0`. | • **EP-I12**: Cart không tồn tại.<br>• **EP-I13**: `products = []`.<br>• **EP-I14**: `products` không phải Array.<br>• **EP-I15**: Có sản phẩm nhưng `totalPrice = 0`. |
+- `POST /api/checkout`
+- `GET /api/checkout/vnpay-callback`
+
+**Công cụ sử dụng:**
+
+- Jest
+- Supertest
+- Postman
+- Jest/Istanbul Coverage
+
+**Phương pháp kiểm thử:**
+
+- Black-box Testing
+- Equivalence Partitioning (EP)
+- Boundary Value Analysis (BVA)
+- Security Testing
+- White-box Testing
+- Branch Coverage
+- Jest Mocking
+
+### 1.2. Mục tiêu kiểm thử
+
+Mục tiêu của bộ kiểm thử Checkout là xác minh:
+
+1. Dữ liệu giao hàng được validate đúng trước khi tạo đơn.
+2. Không cho phép checkout khi giỏ hàng rỗng hoặc không hợp lệ.
+3. Hai phương thức thanh toán `cod` và `vnpay` hoạt động đúng.
+4. Các phương thức thanh toán không được hỗ trợ phải bị từ chối.
+5. VNPay Callback phải kiểm tra chữ ký HMAC-SHA512 trước khi cập nhật trạng thái đơn hàng.
+6. Các trường hợp lỗi Database và các nhánh logic khó xảy ra vẫn được kiểm thử.
+7. `checkout.controller.ts` đạt độ bao phủ tối đa về Statement, Branch, Function và Line.
 
 ---
 
-#### Bảng 1.2: Phân tích Giá trị biên (Boundary Value Analysis - BVA) cho Checkout Module
+# 2. PHÂN TÍCH BLACK-BOX BẰNG EP VÀ BVA
 
-Theo lý thuyết BVA, các trường dữ liệu giao hàng được kiểm thử tại các điểm biên quan trọng: `Min-`, `Min`, `Nom`, `Max` và `Max+`.
+## 2.1. Equivalence Partitioning - EP
 
-| Trường kiểm thử | Ngưỡng đặc tả | Điểm biên | Dữ liệu đầu vào | Kết quả kỳ vọng | Ghi chú kỹ thuật |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`phoneNumber`** | `[10, 10]` số | `Min- = 9`<br>`Min = 10`<br>`Nom = 10`<br>`Max = 10`<br>`Max+ = 11` | `"091234567"`<br>`"0912345678"`<br>`"0381234567"`<br>`"0987654321"`<br>`"09123456789"` | 400<br>200<br>200<br>200<br>400 | Regex kiểm tra chính xác 10 chữ số và đầu số hợp lệ |
-| **`address`** | `[10, 200]` ký tự | `Min- = 9`<br>`Min = 10`<br>`Nom ≈ 50`<br>`Max = 200`<br>`Max+ = 201` | Chuỗi 9 ký tự<br>`"1234567890"`<br>Địa chỉ thông thường<br>`"A".repeat(200)`<br>`"A".repeat(201)` | 400<br>200<br>200<br>200<br>400 | Zod Schema: `z.string().min(10).max(200)` |
+Phương pháp Equivalence Partitioning chia dữ liệu đầu vào thành các nhóm có hành vi tương đương. Mỗi nhóm chỉ cần chọn một hoặc một số giá trị đại diện để kiểm thử.
+
+### Bảng phân vùng tương đương
+
+| Trường / Điều kiện | Phân vùng hợp lệ | Phân vùng không hợp lệ | Kết quả mong đợi |
+|---|---|---|---|
+| `phoneNumber` | Đúng 10 chữ số và bắt đầu bằng `03`, `05`, `07`, `08`, `09` | < 10 số, > 10 số, sai đầu số, chứa ký tự không hợp lệ | Valid → `200`; Invalid → `400` |
+| `address` | Từ 10 đến 200 ký tự | < 10 ký tự hoặc > 200 ký tự | Valid → `200`; Invalid → `400` |
+| `typePayment` | `"cod"` hoặc `"vnpay"` | `"paypal"` hoặc giá trị ngoài enum | Valid → `200`; Invalid → `400` |
+| Cart | Cart tồn tại, `products` là Array, có ít nhất 1 sản phẩm, `totalPrice > 0` | Cart không tồn tại, Cart rỗng, `products` sai kiểu, `totalPrice = 0` | Invalid → `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` |
+| VNPay Secure Hash | Hash đúng với dữ liệu callback | Hash sai hoặc bị chỉnh sửa | Invalid → `400 INVALID_CHECKSUM` |
+| VNPay Response Code | `"00"` | Khác `"00"` | `"00"` → Success; khác `"00"` → Failed |
 
 ---
 
-### 2. Phân tích Luồng Nghiệp vụ Checkout COD vs VNPay Sandbox URL Generation
+## 2.2. Boundary Value Analysis - BVA
 
-Trong `checkout.controller.ts`, module phân tách hai luồng thanh toán dựa trên `typePayment`.
+BVA tập trung vào các giá trị tại biên và ngay bên ngoài biên, vì đây là khu vực dễ xuất hiện lỗi validation.
+
+### Bảng giá trị biên
+
+| Trường | Ngưỡng | Điểm kiểm thử | Input | Expected |
+|---|---|---|---|---|
+| `phoneNumber` | Chính xác 10 số | Min- | `"091234567"` - 9 số | `400 INVALID_PHONE_NUMBER` |
+| `phoneNumber` | Chính xác 10 số | Min / Max | `"0912345678"` - 10 số | `200` |
+| `phoneNumber` | Chính xác 10 số | Max+ | `"09123456789"` - 11 số | `400 INVALID_PHONE_NUMBER` |
+| `address` | 10 → 200 ký tự | Min- | `"123456789"` - 9 ký tự | `400 ADDRESS_TOO_SHORT` |
+| `address` | 10 → 200 ký tự | Min | `"1234567890"` - 10 ký tự | `200` |
+| `address` | 10 → 200 ký tự | Max | `"A".repeat(200)` | `200` |
+| `address` | 10 → 200 ký tự | Max+ | `"A".repeat(201)` | `400 ADDRESS_TOO_LONG` |
+
+### Nhận xét BVA
+
+Đối với `phoneNumber`, miền hợp lệ có độ dài cố định là 10 nên các giá trị quan trọng nhất là:
+
+```text
+9  → Invalid
+10 → Valid
+11 → Invalid
+```
+
+Đối với `address`, miền hợp lệ là từ 10 đến 200 ký tự:
+
+```text
+9   → Invalid
+10  → Valid
+200 → Valid
+201 → Invalid
+```
+
+---
+
+# 3. LUỒNG NGHIỆP VỤ CHECKOUT
+
+## 3.1. Luồng tổng quát
 
 ```mermaid
 flowchart TD
-StartCheck["POST /api/checkout"] --> ValidateSchema{"1. Zod validate(req.body)"}
+    A[POST /api/checkout] --> B{Validate Request Body}
 
-ValidateSchema -- "Invalid" --> Err400["Return 400 validation error"]
+    B -- Invalid --> C[400 Validation Error]
+    B -- Valid --> D[Find Cart by userId]
 
-ValidateSchema -- "Valid" --> FindCart["2. Tìm Cart theo userId"]
+    D --> E{Cart tồn tại?}
 
-FindCart --> CartExists{"3. Cart tồn tại?"}
+    E -- No --> F[400 EMPTY_CART_CHECKOUT_NOT_ALLOWED]
+    E -- Yes --> G{Cart hợp lệ?}
 
-CartExists -- "No" --> ErrCart1["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
+    G -- No --> F
+    G -- Yes --> H{typePayment}
 
-CartExists -- "Yes" --> CheckCart{"4. products hợp lệ và totalPrice > 0?"}
+    H -- cod --> I[Tạo Checkout và Order]
+    I --> J[Reset Cart]
+    J --> K[200 COD Success]
 
-CheckCart -- "No" --> ErrCart2["Return 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED"]
+    H -- vnpay --> L[Tạo Checkout và Order]
+    L --> M[Build VNPay Payment URL]
+    M --> N[200 paymentUrl + orderId]
 
-CheckCart -- "Yes" --> GenOrderID["5. orderId = generatePayID()"]
-
-GenOrderID --> PaymentBranch{"6. typePayment?"}
-
-PaymentBranch -- "cod" --> COD_DB["Insert checkout pending<br/>Insert order pending<br/>Reset Cart"]
-
-COD_DB --> COD_Res["Return 200 COD success"]
-
-PaymentBranch -- "vnpay" --> VNP_DB["Insert checkout<br/>Insert order<br/>Update checkout success"]
-
-VNP_DB --> VNP_GenURL["Init VNPay SDK<br/>buildPaymentUrl(...)"]
-
-VNP_GenURL --> VNP_Res["Return 200 paymentUrl"]
-
-PaymentBranch -- "Other<br/>(White-box mocked)" --> InvalidPayment["Return 400 Loại thanh toán không hợp lệ"]
+    H -- Other --> O[400 INVALID_PAYMENT_METHOD]
 ```
-
-#### A. Luồng Thanh toán Tiền mặt khi nhận hàng (`typePayment = "cod"`)
-
-1. **Kiểm tra dữ liệu đầu vào**: `checkoutSchema.safeParse(req.body)` phải thành công.
-
-2. **Kiểm tra giỏ hàng**:
-- Cart phải tồn tại.
-- `products` phải là Array.
-- `products.length > 0`.
-- `totalPrice > 0`.
-
-3. **Sinh mã giao dịch**:
-- Hàm `generatePayID()` sử dụng timestamp, giây và mili-giây.
-
-4. **Tạo dữ liệu đơn hàng**:
-- `orderId`.
-- `userId`.
-- `products`.
-- `finalPrice`.
-- `shippingInfo`.
-- `paymentMethod`.
-- `status: "pending"`.
-
-5. **Lưu CSDL**:
-- Insert vào `checkouts`.
-- Insert vào `orders`.
-
-6. **Reset Cart**:
-- `cartCol.updateOne({ userId }, { $set: emptyCart() })`.
-
-7. **Phản hồi**:
-- HTTP 200.
-- `success: true`.
-- Trả `orderId` và metadata.
-
-#### B. Luồng Cổng thanh toán VNPay Sandbox (`typePayment = "vnpay"`)
-
-1. **Khởi tạo dữ liệu giao dịch**:
-- Insert checkout.
-- Insert order.
-- Cập nhật trạng thái checkout.
-
-2. **Khởi tạo VNPay SDK**:
-
-```typescript
-const vnpay = new VNPay({
-tmnCode: process.env.VNPAY_TMN_CODE!,
-secureSecret: process.env.VNPAY_SECURE_SECRET!,
-vnpayHost: process.env.VNPAY_HOST!,
-testMode: true,
-loggerFn: ignoreLogger,
-});
-```
-
-3. **Sinh URL thanh toán**:
-
-Các trường chính:
-
-- `vnp_Amount = finalPrice`.
-- `vnp_IpAddr = req.ip || "127.0.0.1"`.
-- `vnp_TxnRef = orderId`.
-- `vnp_OrderInfo = orderId=${orderId}`.
-- `vnp_ReturnUrl = http://localhost:3000/api/checkout/vnpay-callback`.
-- `vnp_ExpireDate`: thời hạn thanh toán.
-
-4. **Phản hồi**:
-- HTTP 200.
-- Trả `paymentUrl` để client redirect sang VNPay.
 
 ---
 
-### 3. Phân tích Kịch bản Bảo mật VNPay Callback: Checksum HMAC-SHA512 Verification
-
-Endpoint `GET /api/checkout/vnpay-callback` tiếp nhận kết quả trả về từ VNPay.
-
-#### A. Thuật toán Ký số và Kiểm tra Checksum (HMAC-SHA512)
-
-Để chống **Parameter Tampering**, controller thực hiện:
-
-1. **Đọc Secret Key**:
-- `VNPAY_SECURE_SECRET`.
-- Fallback `VNP_HASHSECRET`.
-- Nếu cả hai không tồn tại → HTTP 500 `VNPAY_SECRET_NOT_CONFIGURED`.
-
-2. **Lọc tham số**:
-- Loại `vnp_SecureHash`.
-- Loại `vnp_SecureHashType`.
-
-3. **Chỉ giữ các query có kiểu String**:
-
-```typescript
-if (typeof value === "string") {
-cloned[key] = value;
-}
-```
-
-4. **Sắp xếp key theo thứ tự từ điển**.
-
-5. **Tạo Signing String**:
-- `key1=value1&key2=value2&...`
-
-6. **Tính HMAC-SHA512**:
-
-```typescript
-const signData = crypto
-.createHmac("sha512", tmnSecret)
-.update(Buffer.from(sorted, "utf-8"))
-.digest("hex");
-```
-
-7. **So sánh chữ ký**:
-
-```typescript
-if (
-!secureHash ||
-secureHash.toLowerCase() !== signData.toLowerCase()
-) {
-return res.status(400).json({
-success: false,
-errors: [{ message: "INVALID_CHECKSUM" }],
-});
-}
-```
-
-8. **Tìm Order**:
-- Không tồn tại → HTTP 404.
-
-9. **Kiểm tra `vnp_ResponseCode`**:
-- `"00"` → Success.
-- Khác `"00"` → Failed.
-
-#### B. Hai kịch bản kiểm thử bảo mật thực tế
+## 3.2. Luồng COD
 
 ```mermaid
 sequenceDiagram
-autonumber
-actor Attacker as Attacker / VNPay
-participant Server as Express Server (vnpayCallback)
-participant DB as MongoDB (checkouts, carts)
+    actor User
+    participant API as Checkout API
+    participant Cart as Cart Collection
+    participant Order as Order Collection
 
-rect rgb(40, 44, 52)
-Note over Attacker, DB: Kịch bản 1: Giả mạo chữ ký (Tampered Hash)
-Attacker->>Server: GET /vnpay-callback?vnp_ResponseCode=00&vnp_SecureHash=INVALID_HASH
-Server->>Server: Tính lại HMAC-SHA512 từ secret key
-Server-->>Attacker: 400 INVALID_CHECKSUM
-Note right of Server: Không cập nhật Database
-end
+    User->>API: POST /api/checkout typePayment=cod
+    API->>API: Validate shippingInfo
+    API->>Cart: Find Cart
 
-rect rgb(30, 50, 40)
-Note over Attacker, DB: Kịch bản 2: Chữ ký hợp lệ & thành công
-Attacker->>Server: GET /vnpay-callback?...&vnp_ResponseCode=00&vnp_SecureHash=VALID_HASH
-Server->>Server: So sánh signData và secureHash
-Server->>DB: findOne({ orderId })
-Server->>DB: updateOne status = success
-Server->>DB: deleteOne + insertOne Empty Cart
-Server-->>Attacker: 302 Redirect checkout-success
-end
+    alt Cart không hợp lệ
+        API-->>User: 400 EMPTY_CART_CHECKOUT_NOT_ALLOWED
+    else Cart hợp lệ
+        API->>Order: Tạo Order
+        API->>Cart: Reset Cart
+        API-->>User: 200 Checkout Success
+    end
 ```
 
-#### C. Các kịch bản Callback bổ sung trong White-box Testing
+---
 
-Ngoài hai trường hợp trên, bộ test mới bổ sung:
+## 3.3. Luồng VNPay
 
-- Thiếu VNPay Secret → HTTP 500.
-- Hash hợp lệ nhưng Order không tồn tại → HTTP 404.
-- VNPay trả ResponseCode khác `"00"` → cập nhật `failed` và redirect failure.
-- Database lỗi trong Callback → HTTP 500.
-- Query parameter dạng Array → kiểm thử nhánh `typeof value !== "string"`.
+```mermaid
+sequenceDiagram
+    actor User
+    participant API as Checkout API
+    participant DB as MongoDB
+    participant VNPay
+
+    User->>API: POST /api/checkout typePayment=vnpay
+    API->>API: Validate Request
+    API->>DB: Kiểm tra Cart
+    API->>DB: Tạo Checkout + Order
+    API->>VNPay: Build Payment URL
+    API-->>User: 200 paymentUrl + orderId
+```
 
 ---
 
-### 4. Danh mục Test Cases (Test Suite Catalog)
+# 4. KIỂM TRA BẢO MẬT VNPAY CALLBACK
 
-Bộ test hiện tại trong `checkout.test.ts` gồm **25 test cases**, trong đó 14 test ban đầu tập trung vào Black-box/EP/BVA và bảo mật cơ bản, 11 test bổ sung tập trung vào White-box và Branch Coverage.
+VNPay Callback sử dụng chữ ký HMAC-SHA512 để kiểm tra tính toàn vẹn của dữ liệu trả về.
 
-| STT | Test Function / ID | Nhóm kiểm thử | Mục tiêu chính | Kết quả |
-| :--: | :--- | :--- | :--- | :---: |
-| 1 | `TC_CHECKOUT_EMPTY_01` | EP / Cart Guard | Cart rỗng `products.length === 0` | PASS |
-| 2 | `TC_CHECKOUT_EMPTY_02` | EP / Resource Guard | Cart không tồn tại | PASS |
-| 3 | `TC_CHECKOUT_BVA_01` | BVA / EP | Phone hợp lệ 10 chữ số | PASS |
-| 4 | `TC_CHECKOUT_BVA_02` | BVA Min- | Phone 9 chữ số | PASS |
-| 5 | `TC_CHECKOUT_BVA_03` | BVA Max+ | Phone 11 chữ số | PASS |
-| 6 | `TC_CHECKOUT_EP_04` | EP | Phone 10 số nhưng sai prefix | PASS |
-| 7 | `TC_CHECKOUT_BVA_05` | BVA Min- | Address 9 ký tự | PASS |
-| 8 | `TC_CHECKOUT_BVA_06` | BVA Min | Address 10 ký tự | PASS |
-| 9 | `TC_CHECKOUT_BVA_07` | BVA Max | Address 200 ký tự | PASS |
-| 10 | `TC_CHECKOUT_BVA_08` | BVA Max+ | Address 201 ký tự | PASS |
-| 11 | `TC_CHECKOUT_EP_09` | EP | `cod` và `vnpay` hợp lệ | PASS |
-| 12 | `TC_CHECKOUT_EP_10` | EP | Payment Type không hợp lệ | PASS |
-| 13 | `TC_CHECKOUT_VNPAY_11` | Security | Tampered Hash → INVALID_CHECKSUM | PASS |
-| 14 | `TC_CHECKOUT_VNPAY_12` | Security | Valid Hash + ResponseCode 00 | PASS |
-| 15 | `TC_CHECKOUT_EXTRA_13` | White-box | Thiếu VNPay Secret | PASS |
-| 16 | `TC_CHECKOUT_EXTRA_14` | White-box | Hash hợp lệ nhưng Order không tồn tại | PASS |
-| 17 | `TC_CHECKOUT_EXTRA_15` | White-box | VNPay Payment Failed | PASS |
-| 18 | `TC_CHECKOUT_EXTRA_16` | White-box / Exception | `createCheckout` gặp lỗi DB | PASS |
-| 19 | `TC_CHECKOUT_EXTRA_17` | White-box / Exception | `vnpayCallback` gặp lỗi DB | PASS |
-| 20 | `TC_CHECKOUT_EXTRA_18` | White-box / Branch | Query parameter dạng Array | PASS |
-| 21 | `TC_CHECKOUT_EXTRA_19` | White-box / Cart Guard | `products` không phải Array | PASS |
-| 22 | `TC_CHECKOUT_EXTRA_20` | White-box / Cart Guard | Có products nhưng `totalPrice = 0` | PASS |
-| 23 | `TC_CHECKOUT_EXTRA_21` | White-box / Mock Schema | Fallback Payment Branch | PASS |
-| 24 | `TC_CHECKOUT_EXTRA_22` | White-box / Logical Branch | `cart.products \|\| []` fallback | PASS |
-| 25 | `TC_CHECKOUT_EXTRA_23` | White-box / Logical Branch | `req.ip \|\| "127.0.0.1"` fallback | PASS |
+Endpoint:
 
----
+```text
+GET /api/checkout/vnpay-callback
+```
 
-| **## 🟢 PHẦN 2: KIỂM THỬ API THỰC TẾ BẰNG POSTMAN**
-
-Postman được sử dụng để kiểm thử Black-box/API thực tế của module Checkout. Một test case được xem là **PASS** khi Actual Result khớp Expected Result; vì vậy các test dữ liệu không hợp lệ trả HTTP 400 vẫn là PASS nếu hệ thống từ chối đúng theo đặc tả.
-
-Test Case | Mục tiêu | Expected | Actual | Kết quả
----|---|---|---|---
-`TC_CHK_01` | Empty Cart | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS
-`TC_CHK_03` | Phone hợp lệ 10 chữ số | `200` | `200` | PASS
-`TC_CHK_04` | Phone 9 chữ số | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
-`TC_CHK_05` | Phone 11 chữ số | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
-`TC_CHK_06` | Phone đúng 10 số nhưng sai prefix | `400 INVALID_PHONE_NUMBER` | `400 INVALID_PHONE_NUMBER` | PASS
-`TC_CHK_07` | Address 9 ký tự | `400 ADDRESS_TOO_SHORT` | `400 ADDRESS_TOO_SHORT` | PASS
-`TC_CHK_08` | Address 10 ký tự | `200` | `200` | PASS
-`TC_CHK_09` | Address 200 ký tự | `200` | `200` | PASS
-`TC_CHK_10` | Address 201 ký tự | `400 ADDRESS_TOO_LONG` | `400 ADDRESS_TOO_LONG` | PASS
-`TC_CHK_11A` | Payment Type COD hợp lệ | `200 success=true` | `200 success=true` | PASS
-`TC_CHK_11B` | Payment Type VNPay hợp lệ | `200 + paymentUrl` | `200 + paymentUrl` | PASS
-`TC_CHK_12` | Payment Type không hợp lệ (`paypal`) | `400 INVALID_PAYMENT_METHOD` | `400 INVALID_PAYMENT_METHOD` | PASS
-`TC_CHK_13` | VNPay Tampered Hash | `400 INVALID_CHECKSUM` | `400 INVALID_CHECKSUM` | PASS
-`TC_CHK_14` | VNPay Valid Hash + ResponseCode `00` | `302 Redirect checkout-success` | `302 Found` | PASS
-
-**Lưu ý về `TC_CHK_02 - Cart Not Found`:**
-
-Test case này phụ thuộc trực tiếp vào trạng thái document Cart trong MongoDB. Trong Jest, nhánh này được tái hiện ổn định bằng mock `findOne()` trả về `null`. Qua Postman thật, việc đảm bảo user hoàn toàn không có Cart document phụ thuộc dữ liệu DB nên case này được giữ ở Jest/White-box thay vì ép tái hiện thủ công.
-
-**Phân chia vai trò giữa Postman và Jest:**
-
-- **Postman:** kiểm thử API thực tế, EP/BVA, Cart Guard, COD, VNPay, Invalid Input, Tampered Hash và Valid Hash Callback.
-- **Jest/White-box:** kiểm thử DB exception, missing secret, query array, mock schema, `cart.products || []`, `req.ip || "127.0.0.1"` và các nhánh nội bộ khó tái hiện ổn định bằng HTTP request.
-
-**## 🟢 PHẦN 3: PHÂN TÍCH ĐỘ BAO PHỦ VÀ CONTROL FLOW**                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-
-### 1. Phân tích Đồ thị Dòng điều khiển (Control Flow Graph - CFG)
-
-#### A. Đồ thị CFG cho hàm `createCheckout`
-
-Các nút điều kiện nghiệp vụ chính:
-
-- **Node 0**: Bắt đầu `createCheckout`.
-- **Node 1**: `if (!validation.success)`.
-- **Node 2**: Return 400 Validation Error.
-- **Node 3**: Lấy các collection và tìm Cart.
-- **Node 4**: `if (!cart)`.
-- **Node 5**: Return 400 Empty Cart.
-- **Node 6**: Tính `totalPrice`.
-- **Node 7**: Kiểm tra `products` và `totalPrice`.
-- **Node 8**: Return 400 Empty Cart.
-- **Node 9**: Sinh `orderId` và `orderData`.
-- **Node 10**: `if (typePayment === "cod")`.
-- **Node 11**: COD Success.
-- **Node 12**: `if (typePayment === "vnpay")`.
-- **Node 13**: VNPay Success.
-- **Node 14**: Payment fallback → 400.
-- **Node 15**: `catch` → 500.
+## 4.1. Quy trình kiểm tra
 
 ```mermaid
 flowchart TD
-N0(["Node 0: Bắt đầu createCheckout"]) --> N1{"Node 1: !validation.success"}
+    A[VNPay Callback] --> B[Đọc Query Parameters]
+    B --> C{VNPay Secret tồn tại?}
 
-N1 -- "True" --> N2["Node 2: 400 Validation Error"]
-N1 -- "False" --> N3["Node 3: Find Cart"]
+    C -- No --> D[500 VNPAY_SECRET_NOT_CONFIGURED]
+    C -- Yes --> E[Loại vnp_SecureHash và SecureHashType]
 
-N3 --> N4{"Node 4: !cart"}
+    E --> F[Chỉ lấy Query có kiểu String]
+    F --> G[Sort Parameters]
+    G --> H[Tạo Signing String]
+    H --> I[HMAC-SHA512]
 
-N4 -- "True" --> N5["Node 5: 400 EMPTY_CART"]
-N4 -- "False" --> N6["Node 6: totalPrice"]
+    I --> J{Hash hợp lệ?}
 
-N6 --> N7{"Node 7: products invalid / empty / totalPrice = 0"}
+    J -- No --> K[400 INVALID_CHECKSUM]
+    J -- Yes --> L[Find Order]
 
-N7 -- "True" --> N8["Node 8: 400 EMPTY_CART"]
-N7 -- "False" --> N9["Node 9: generatePayID + orderData"]
+    L --> M{Order tồn tại?}
 
-N9 --> N10{"Node 10: typePayment === cod"}
+    M -- No --> N[404 Order Not Found]
+    M -- Yes --> O{vnp_ResponseCode = 00?}
 
-N10 -- "True" --> N11["Node 11: COD -> 200"]
-N10 -- "False" --> N12{"Node 12: typePayment === vnpay"}
+    O -- Yes --> P[Update Success + Empty Cart]
+    P --> Q[302 Redirect Checkout Success]
 
-N12 -- "True" --> N13["Node 13: VNPay -> 200 paymentUrl"]
-N12 -- "False" --> N14["Node 14: Invalid Payment -> 400"]
-
-N0 -. "Exception" .-> N15["Node 15: catch -> 500"]
-N3 -. "Exception" .-> N15
-N11 -. "Exception" .-> N15
+    O -- No --> R[Update Failed]
+    R --> S[302 Redirect Checkout Failure]
 ```
 
-**Lưu ý quan trọng về Node 14:**
+## 4.2. Ý nghĩa HMAC-SHA512
 
-Ở luồng HTTP thông thường, `checkoutSchema` chỉ cho `cod` hoặc `vnpay`, do đó Node 14 không thể đạt tới bằng một request hợp lệ.
+Controller tính lại chữ ký dựa trên các query parameter và Secret Key:
 
-Tuy nhiên, trong `TC_CHECKOUT_EXTRA_21`, nhóm dùng Jest Spy/Mock cho `checkoutSchema.safeParse()` để cô lập controller và ép `typePayment = "paypal"` đi qua validation. Nhờ đó Node 14 được thực thi trong White-box Testing mà **không cần sửa production code**.
+```typescript
+const signData = crypto
+  .createHmac("sha512", tmnSecret)
+  .update(Buffer.from(sorted, "utf-8"))
+  .digest("hex");
+```
+
+Sau đó so sánh chữ ký vừa tính với `vnp_SecureHash`.
+
+Nếu không giống nhau:
+
+```text
+400 INVALID_CHECKSUM
+```
+
+Điều này giúp phát hiện trường hợp dữ liệu callback bị chỉnh sửa trên đường truyền.
 
 ---
 
-#### B. Đồ thị CFG cho `vnpayCallback`
+# 5. DANH SÁCH ĐẦY ĐỦ 25 TEST CASE
 
-Các nút quan trọng:
+> Các testcase `TC_CHK_01 → TC_CHK_14` là bộ test ban đầu tập trung vào EP, BVA, nghiệp vụ và VNPay Security.  
+> Các testcase `TC_CHK_15 → TC_CHK_25` được bổ sung bằng White-box/Jest Mocking để phủ các branch khó tái hiện bằng request thực tế.
 
-- **C0**: Đọc Query và Secret.
-- **C1**: `if (!tmnSecret)`.
-- **C2**: 500 Secret Not Configured.
-- **C3**: Lọc, sort Query và tính HMAC.
-- **C4**: SecureHash thiếu hoặc mismatch.
-- **C5**: 400 INVALID_CHECKSUM.
-- **C6**: Tìm Order.
-- **C7**: `if (!order)`.
-- **C8**: 404 Order Not Found.
-- **C9**: Đọc ResponseCode.
-- **C10**: `vnp_ResponseCode === "00"`.
-- **C11**: Payment Success.
-- **C12**: Payment Failed.
-- **C13**: `catch` → 500.
+| STT | Test Case ID | Kịch bản kiểm thử | Phương pháp | Input / Mock chính | Expected Outcome | Kết quả | Mục tiêu |
+|---:|---|---|---|---|---|---|---|
+| 1 | `TC_CHK_01` | Không cho phép Checkout khi giỏ hàng rỗng | EP | `products = []`, `totalPrice = 0` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS | Cart Guard |
+| 2 | `TC_CHK_02` | Không cho phép Checkout khi Cart không tồn tại | EP / White-box | `cartCollection.findOne() -> null` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS | Phủ nhánh `!cart` |
+| 3 | `TC_CHK_03` | Số điện thoại hợp lệ 10 chữ số | BVA | `phoneNumber = "0912345678"` | `200 Checkout Success` | PASS | BVA Valid Boundary |
+| 4 | `TC_CHK_04` | Số điện thoại 9 chữ số | BVA | `phoneNumber = "091234567"` | `400 INVALID_PHONE_NUMBER` | PASS | BVA Min- |
+| 5 | `TC_CHK_05` | Số điện thoại 11 chữ số | BVA | `phoneNumber = "09123456789"` | `400 INVALID_PHONE_NUMBER` | PASS | BVA Max+ |
+| 6 | `TC_CHK_06` | Số điện thoại đúng 10 số nhưng sai đầu số | EP | `phoneNumber = "0123456789"` | `400 INVALID_PHONE_NUMBER` | PASS | Invalid EP |
+| 7 | `TC_CHK_07` | Địa chỉ 9 ký tự | BVA | `address = "123456789"` | `400 ADDRESS_TOO_SHORT` | PASS | BVA Min- |
+| 8 | `TC_CHK_08` | Địa chỉ 10 ký tự | BVA | `address = "1234567890"` | `200 Checkout Success` | PASS | BVA Min |
+| 9 | `TC_CHK_09` | Địa chỉ 200 ký tự | BVA | `address = "A".repeat(200)` | `200 Checkout Success` | PASS | BVA Max |
+| 10 | `TC_CHK_10` | Địa chỉ 201 ký tự | BVA | `address = "A".repeat(201)` | `400 ADDRESS_TOO_LONG` | PASS | BVA Max+ |
+| 11 | `TC_CHK_11` | Kiểm tra loại thanh toán hợp lệ | EP | `typePayment = "cod"` và `"vnpay"` | COD `200`; VNPay `200 + paymentUrl` | PASS | Valid Payment EP |
+| 12 | `TC_CHK_12` | Loại thanh toán không hợp lệ | EP | `typePayment = "paypal"` | `400 INVALID_PAYMENT_METHOD` | PASS | Invalid Payment EP |
+| 13 | `TC_CHK_13` | VNPay Callback bị sửa chữ ký | EP / Security | `vnp_SecureHash = "INVALID_HASH"` | `400 INVALID_CHECKSUM` | PASS | Chống Parameter Tampering |
+| 14 | `TC_CHK_14` | VNPay Callback Hash hợp lệ và ResponseCode 00 | Security | Valid HMAC + `vnp_ResponseCode = "00"` | `302 Redirect checkout-success` | PASS | VNPay Success |
+| 15 | `TC_CHK_15` | Thiếu VNPay Secret | White-box | Xóa `VNPAY_SECURE_SECRET` và `VNP_HASHSECRET` | `500 VNPAY_SECRET_NOT_CONFIGURED` | PASS | Secret Guard |
+| 16 | `TC_CHK_16` | Hash hợp lệ nhưng Order không tồn tại | White-box | Valid Hash + `orderCollection.findOne() -> null` | `404 Order Not Found` | PASS | Phủ `!order` |
+| 17 | `TC_CHK_17` | VNPay trả trạng thái thanh toán thất bại | White-box | Valid Hash + `vnp_ResponseCode != "00"` | Update `failed` + Redirect Failure | PASS | ResponseCode False Branch |
+| 18 | `TC_CHK_18` | Database lỗi trong `createCheckout` | White-box / Exception | Mock DB `throw Error` | `500 Internal Server Error` | PASS | Phủ `catch` createCheckout |
+| 19 | `TC_CHK_19` | Database lỗi trong `vnpayCallback` | White-box / Exception | Mock DB `throw Error` | `500 Internal Server Error` | PASS | Phủ `catch` callback |
+| 20 | `TC_CHK_20` | Query VNPay có giá trị không phải String | White-box / Branch | Query parameter có kiểu `Array` | Non-string value bị bỏ qua | PASS | Phủ `typeof value === "string"` false |
+| 21 | `TC_CHK_21` | `cart.products` không phải Array | White-box / Cart Guard | `cart.products = object/string` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS | Phủ `!Array.isArray()` |
+| 22 | `TC_CHK_22` | Có sản phẩm nhưng `totalPrice = 0` | White-box / Cart Guard | `products.length > 0`, `totalPrice = 0` | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS | Phủ `totalPrice === 0` |
+| 23 | `TC_CHK_23` | Kiểm tra Payment Fallback trong Controller | White-box / Mock Schema | Mock `safeParse()` thành công với `typePayment = "paypal"` | `400 INVALID_PAYMENT_METHOD` | PASS | Phủ fallback sau Zod |
+| 24 | `TC_CHK_24` | Kiểm tra fallback `cart.products || []` | White-box / Logical Branch | Getter làm `cart.products` thành `undefined` tại lúc tạo `orderData` | Fallback `[]` được thực thi | PASS | Phủ Logical OR fallback |
+| 25 | `TC_CHK_25` | Kiểm tra fallback IP | White-box / Logical Branch | `req.ip = undefined` | Dùng `"127.0.0.1"` | PASS | Phủ `req.ip || "127.0.0.1"` |
 
-```mermaid
-flowchart TD
-C0(["C0: Bắt đầu vnpayCallback"]) --> C1{"C1: !tmnSecret"}
+---
 
-C1 -- "True" --> C2["C2: 500 SECRET_NOT_CONFIGURED"]
-C1 -- "False" --> C3["C3: Filter + Sort + HMAC-SHA512"]
+# 6. CHI TIẾT INPUT CỦA BỘ TEST BLACK-BOX
 
-C3 --> C4{"C4: !secureHash hoặc Hash mismatch"}
+Các field không được nhắc đến trong testcase sử dụng dữ liệu hợp lệ mặc định.
 
-C4 -- "True" --> C5["C5: 400 INVALID_CHECKSUM"]
-C4 -- "False" --> C6["C6: findOne order"]
+Ví dụ dữ liệu Shipping hợp lệ:
 
-C6 --> C7{"C7: !order"}
+```json
+{
+  "fullName": "Nguyen Van A",
+  "phoneNumber": "0912345678",
+  "address": "123 Duong Nguyen Hue, Quan 1, TP.HCM",
+  "email": "test@example.com"
+}
+```
 
-C7 -- "True" --> C8["C8: 404 Order not found"]
-C7 -- "False" --> C9["C9: Read ResponseCode"]
+## 6.1. TC_CHK_01 - Empty Cart
 
-C9 --> C10{"C10: ResponseCode === 00"}
+**Precondition:**
 
-C10 -- "True" --> C11["C11: Success + Empty Cart + Redirect"]
-C10 -- "False" --> C12["C12: Failed + Redirect Failure"]
+```text
+Cart:
+products = []
+totalPrice = 0
+```
 
-C0 -. "Exception" .-> C13["C13: catch -> 500"]
-C6 -. "Exception" .-> C13
+**Request:**
+
+```text
+POST /api/checkout
+Header: Authorization: Bearer {{token}}
+```
+
+**Payload:**
+
+```json
+{
+  "typePayment": "cod",
+  "shippingInfo": {
+    "fullName": "Nguyen Van A",
+    "phoneNumber": "0912345678",
+    "address": "123 Duong Nguyen Hue, Quan 1, TP.HCM",
+    "email": "test@example.com"
+  }
+}
+```
+
+**Expected:**
+
+```text
+400 EMPTY_CART_CHECKOUT_NOT_ALLOWED
 ```
 
 ---
 
-### 2. Kết quả Coverage trước khi bổ sung White-box Test
+## 6.2. TC_CHK_03 - Phone hợp lệ 10 số
 
-Ở bộ test ban đầu:
-
-- **14/14 test cases PASS**.
-- Statement Coverage: **89.41%**.
-- Branch Coverage: **79.48%**.
-- Function Coverage: **100%**.
-- Line Coverage: **89.15%**.
-
-Các dòng chưa thực thi tại thời điểm đó:
-
-- `140-143`.
-- `170`.
-- `227`.
-- `252-259`.
-
-Nguyên nhân chính:
-
-1. Chưa test VNPay Payment Failed.
-2. Chưa test Order Not Found.
-3. Chưa test Missing Secret.
-4. Chưa kích hoạt các khối `catch`.
-5. Chưa phủ các nhánh logic hiếm gặp.
-6. Payment fallback bị Schema chặn trước.
-7. `cart.products || []` khó đạt nhánh fallback trong request bình thường.
-8. Express thường luôn cấp `req.ip`.
+```text
+Header: Authorization: Bearer {{token}}
+Payload: phoneNumber = "0912345678"
+Expected: 200
+```
 
 ---
 
-### 3. Quá trình nâng Coverage lên 100%
+## 6.3. TC_CHK_04 - Phone 9 số
 
-#### Giai đoạn 1 – Bộ test ban đầu
+```text
+Header: Authorization: Bearer {{token}}
+Payload: phoneNumber = "091234567"
+Expected: 400 INVALID_PHONE_NUMBER
+```
+
+---
+
+## 6.4. TC_CHK_05 - Phone 11 số
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: phoneNumber = "09123456789"
+Expected: 400 INVALID_PHONE_NUMBER
+```
+
+---
+
+## 6.5. TC_CHK_06 - Phone sai đầu số
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: phoneNumber = "0123456789"
+Expected: 400 INVALID_PHONE_NUMBER
+```
+
+---
+
+## 6.6. TC_CHK_07 - Address 9 ký tự
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: address = "123456789"
+Expected: 400 ADDRESS_TOO_SHORT
+```
+
+---
+
+## 6.7. TC_CHK_08 - Address 10 ký tự
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: address = "1234567890"
+Expected: 200
+```
+
+---
+
+## 6.8. TC_CHK_09 - Address 200 ký tự
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: address = "A".repeat(200)
+Expected: 200
+```
+
+---
+
+## 6.9. TC_CHK_10 - Address 201 ký tự
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: address = "A".repeat(201)
+Expected: 400 ADDRESS_TOO_LONG
+```
+
+---
+
+## 6.10. TC_CHK_11 - Payment hợp lệ
+
+### COD
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: typePayment = "cod"
+Expected: 200 success=true
+```
+
+### VNPay
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: typePayment = "vnpay"
+Expected: 200 + paymentUrl + orderId
+```
+
+---
+
+## 6.11. TC_CHK_12 - Payment không hợp lệ
+
+```text
+Header: Authorization: Bearer {{token}}
+Payload: typePayment = "paypal"
+Expected: 400 INVALID_PAYMENT_METHOD
+```
+
+---
+
+## 6.12. TC_CHK_13 - VNPay Tampered Hash
+
+```text
+GET /api/checkout/vnpay-callback
+
+Query:
+vnp_ResponseCode = 00
+vnp_OrderInfo = orderId=<valid>
+vnp_SecureHash = INVALID_HASH
+```
+
+**Expected:**
+
+```text
+400 INVALID_CHECKSUM
+```
+
+---
+
+## 6.13. TC_CHK_14 - VNPay Valid Hash
+
+```text
+GET /api/checkout/vnpay-callback
+
+Query:
+vnp_ResponseCode = 00
+vnp_OrderInfo = orderId=<valid>
+vnp_SecureHash = <validHash>
+```
+
+**Expected:**
+
+```text
+302 Redirect
+/checkout-success?orderId=...
+```
+
+---
+
+# 7. KIỂM THỬ API THỰC TẾ BẰNG POSTMAN
+
+Postman được dùng để kiểm tra hành vi API thực tế của Checkout theo hướng Black-box.
+
+Một testcase được xem là **PASS khi Actual Result khớp Expected Result**.
+
+Do đó:
+
+```text
+Expected = 400
+Actual   = 400
+=> PASS
+```
+
+Không phải testcase PASS nào cũng phải trả HTTP 200.
+
+## 7.1. Danh sách Postman Request
+
+| STT | Postman Request | Input chính | Expected | Kết quả |
+|---:|---|---|---|---|
+| 1 | `SETUP - Add Product To Cart` | Product hợp lệ + quantity | `200/201` Add Cart Success | PASS |
+| 2 | `TC_CHK_01 - Empty Cart` | Cart rỗng | `400 EMPTY_CART_CHECKOUT_NOT_ALLOWED` | PASS |
+| 3 | `TC_CHK_03 - Valid Phone` | `"0912345678"` | `200` | PASS |
+| 4 | `TC_CHK_04 - Phone 9 digits` | `"091234567"` | `400 INVALID_PHONE_NUMBER` | PASS |
+| 5 | `TC_CHK_05 - Phone 11 digits` | `"09123456789"` | `400 INVALID_PHONE_NUMBER` | PASS |
+| 6 | `TC_CHK_06 - Invalid Phone Prefix` | `"0123456789"` | `400 INVALID_PHONE_NUMBER` | PASS |
+| 7 | `TC_CHK_07 - Address 9 chars` | 9 ký tự | `400 ADDRESS_TOO_SHORT` | PASS |
+| 8 | `TC_CHK_08 - Address 10 chars` | 10 ký tự | `200` | PASS |
+| 9 | `TC_CHK_09 - Address 200 chars` | `"A".repeat(200)` | `200` | PASS |
+| 10 | `TC_CHK_10 - Address 201 chars` | `"A".repeat(201)` | `400 ADDRESS_TOO_LONG` | PASS |
+| 11 | `TC_CHK_11A - Valid Payment Type COD` | `typePayment = "cod"` | `200 success=true` | PASS |
+| 12 | `TC_CHK_11B - Valid Payment Type VNPay` | `typePayment = "vnpay"` | `200 + paymentUrl` | PASS |
+| 13 | `TC_CHK_12 - Invalid Payment Type` | `typePayment = "paypal"` | `400 INVALID_PAYMENT_METHOD` | PASS |
+| 14 | `TC_CHK_13 - VNPay Tampered Hash` | Invalid Hash | `400 INVALID_CHECKSUM` | PASS |
+| 15 | `TC_CHK_14 - VNPay Valid Hash Success` | Valid Hash + ResponseCode 00 | `302 Redirect` | PASS |
+
+### Lưu ý về TC_CHK_02
+
+`TC_CHK_02 - Cart Not Found` được giữ trong Jest nhưng không chạy trực tiếp trong Postman.
+
+Nguyên nhân:
+
+```text
+TC_CHK_02 cần cartCollection.findOne() trả về null
+```
+
+Đây là trạng thái phụ thuộc trực tiếp vào MongoDB và khó đảm bảo ổn định bằng HTTP request.
+
+Trong Jest có thể chủ động mock:
+
+```typescript
+mockCartCollection.findOne.mockResolvedValue(null);
+```
+
+Do đó testcase này phù hợp hơn với Jest/White-box.
+
+---
+
+# 8. WHITE-BOX TESTING VÀ BRANCH COVERAGE
+
+## 8.1. Tại sao cần White-box?
+
+Sau khi chạy bộ test ban đầu, tất cả testcase đều PASS nhưng Branch Coverage vẫn chưa đạt 100%.
+
+Kết quả ban đầu:
 
 | Chỉ số | Coverage |
-| :--- | ---: |
+|---|---:|
 | Statements | 89.41% |
 | Branches | 79.48% |
 | Functions | 100% |
 | Lines | 89.15% |
 
-#### Giai đoạn 2 – Bổ sung Error & VNPay Callback Tests
+Điều này chứng minh:
 
-Các test:
+> Testcase PASS không đồng nghĩa với việc mọi nhánh trong code đã được thực thi.
 
-- `EXTRA_13`: Missing Secret.
-- `EXTRA_14`: Order Not Found.
-- `EXTRA_15`: VNPay Failed.
-- `EXTRA_16`: createCheckout DB Error.
-- `EXTRA_17`: Callback DB Error.
+Một số nhánh rất khó xảy ra trong request bình thường như:
 
-Sau giai đoạn này:
-
-- Statements tăng lên **98.82%**.
-- Branches tăng lên **89.74%**.
-- Functions vẫn **100%**.
-- Lines tăng lên **98.79%**.
-
-#### Giai đoạn 3 – Bổ sung Non-string Query
-
-`TC_CHECKOUT_EXTRA_18` gửi query lặp để Express parse thành Array.
-
-Mục tiêu phủ nhánh:
-
-```typescript
-if (typeof value === "string") {
-cloned[key] = value;
-}
+```text
+DB Error
+Missing VNPay Secret
+Order Not Found
+Query value không phải String
+req.ip = undefined
+cart.products || []
+Payment fallback sau Schema
 ```
 
-Sau test này:
-
-- Branch Coverage tăng lên **92.30%**.
-
-#### Giai đoạn 4 – Bổ sung Cart Guard Edge Cases
-
-- `TC_CHECKOUT_EXTRA_19`: `products` không phải Array.
-- `TC_CHECKOUT_EXTRA_20`: Có products nhưng `totalPrice = 0`.
-
-Hai test này tăng độ chắc chắn cho Cart Guard và kiểm tra đầy đủ các trường hợp nghiệp vụ biên.
-
-#### Giai đoạn 5 – Phủ Payment Fallback
-
-`TC_CHECKOUT_EXTRA_21` mock:
-
-```typescript
-checkoutSchema.safeParse()
-```
-
-để cho `typePayment = "paypal"` đi qua validation ở mức Unit/White-box.
-
-Kết quả:
-
-- Statements: **100%**.
-- Lines: **100%**.
-- Branches: **94.87%**.
-
-#### Giai đoạn 6 – Phủ hai Logical Fallback cuối cùng
-
-##### `TC_CHECKOUT_EXTRA_22`
-
-Phủ:
-
-```typescript
-products: cart.products || []
-```
-
-Test sử dụng getter để:
-
-- Các lần đầu `cart.products` trả Array hợp lệ.
-- Khi controller tạo `orderData`, getter trả `undefined`.
-- Biểu thức fallback `|| []` được thực thi.
-
-##### `TC_CHECKOUT_EXTRA_23`
-
-Phủ:
-
-```typescript
-vnp_IpAddr: req.ip || "127.0.0.1"
-```
-
-Test gọi trực tiếp `createCheckout` với mock request không có `ip`.
-
-Kết quả:
-
-- Fallback `"127.0.0.1"` được chạy.
-- Branch Coverage đạt **100%**.
+Do đó cần dùng Jest Mocking để tạo chính xác các trạng thái này.
 
 ---
 
-### 4. Kết quả Coverage cuối cùng
+# 9. CONTROL FLOW GRAPH - CREATE CHECKOUT
 
-Lệnh kiểm thử:
+```mermaid
+flowchart TD
+    A[Start createCheckout] --> B{Validation Success?}
 
-`npx jest src/tests/checkout.test.ts --coverage --runInBand`
+    B -- No --> C[400 Validation Error]
+    B -- Yes --> D[Find Cart]
 
-Kết quả:
+    D --> E{Cart tồn tại?}
 
-- **Test Suites: 1 passed, 1 total**
-- **Tests: 25 passed, 25 total**
-- **Snapshots: 0**
-- **Test Failed: 0**
+    E -- No --> F[400 Empty Cart]
+    E -- Yes --> G[Get totalPrice]
 
-Coverage riêng `checkout.controller.ts`:
+    G --> H{products Array + length > 0 + totalPrice > 0?}
 
-| File | % Statements | % Branch | % Functions | % Lines | Uncovered Lines |
-| :--- | ---: | ---: | ---: | ---: | :--- |
+    H -- No --> F
+    H -- Yes --> I[Generate Order ID]
+
+    I --> J{typePayment = cod?}
+
+    J -- Yes --> K[COD Flow]
+    K --> L[200 Success]
+
+    J -- No --> M{typePayment = vnpay?}
+
+    M -- Yes --> N[VNPay Flow]
+    N --> O[200 paymentUrl]
+
+    M -- No --> P[400 Invalid Payment]
+
+    A -. Exception .-> Q[500 Error]
+    D -. Exception .-> Q
+    K -. Exception .-> Q
+```
+
+---
+
+# 10. CONTROL FLOW GRAPH - VNPAY CALLBACK
+
+```mermaid
+flowchart TD
+    A[Start Callback] --> B{Secret tồn tại?}
+
+    B -- No --> C[500 Secret Not Configured]
+    B -- Yes --> D[Filter Query]
+
+    D --> E{Query value là String?}
+
+    E -- Yes --> F[Clone Value]
+    E -- No --> G[Skip Value]
+
+    F --> H[Sort + HMAC]
+    G --> H
+
+    H --> I{Hash hợp lệ?}
+
+    I -- No --> J[400 INVALID_CHECKSUM]
+    I -- Yes --> K[Find Order]
+
+    K --> L{Order tồn tại?}
+
+    L -- No --> M[404]
+    L -- Yes --> N{ResponseCode = 00?}
+
+    N -- Yes --> O[Success]
+    O --> P[Empty Cart]
+    P --> Q[302 Success Redirect]
+
+    N -- No --> R[Failed]
+    R --> S[302 Failure Redirect]
+
+    A -. Exception .-> T[500 Error]
+    K -. Exception .-> T
+```
+
+---
+
+# 11. MA TRẬN BRANCH QUAN TRỌNG
+
+| STT | Điều kiện | True Branch | False / Fallback Branch | Test tiêu biểu |
+|---:|---|---|---|---|
+| 1 | `!validation.success` | Reject 400 | Đi tiếp | `TC_CHK_04`, `TC_CHK_03` |
+| 2 | `!cart` | Reject Cart Not Found | Cart tồn tại | `TC_CHK_02`, các valid case |
+| 3 | `!Array.isArray(cart.products)` | Reject | Array hợp lệ | `TC_CHK_21`, `TC_CHK_03` |
+| 4 | `products.length === 0` | Reject | Có sản phẩm | `TC_CHK_01`, valid cases |
+| 5 | `totalPrice === 0` | Reject | Giá > 0 | `TC_CHK_22`, valid cases |
+| 6 | `typePayment === "cod"` | COD | Sang VNPay check | `TC_CHK_11` |
+| 7 | `typePayment === "vnpay"` | VNPay | Payment fallback | `TC_CHK_11`, `TC_CHK_23` |
+| 8 | VNPay Secret tồn tại | Tiếp tục | Return 500 | `TC_CHK_14`, `TC_CHK_15` |
+| 9 | `typeof value === "string"` | Clone | Skip | Callback tests, `TC_CHK_20` |
+| 10 | Hash hợp lệ | Đi tiếp | INVALID_CHECKSUM | `TC_CHK_14`, `TC_CHK_13` |
+| 11 | `!order` | Return 404 | Order tồn tại | `TC_CHK_16`, `TC_CHK_14` |
+| 12 | `vnp_ResponseCode === "00"` | Success | Failed | `TC_CHK_14`, `TC_CHK_17` |
+| 13 | `cart.products || []` | Dùng products | Dùng `[]` | Valid checkout, `TC_CHK_24` |
+| 14 | `req.ip || "127.0.0.1"` | Dùng request IP | Dùng localhost | VNPay, `TC_CHK_25` |
+| 15 | `catch createCheckout` | Error 500 | Normal Flow | `TC_CHK_18`, valid cases |
+| 16 | `catch vnpayCallback` | Error 500 | Normal Flow | `TC_CHK_19`, callback cases |
+
+---
+
+# 12. KẾT QUẢ COVERAGE
+
+## 12.1. Lệnh chạy Jest
+
+```bash
+npx jest src/tests/checkout.test.ts --coverage --runInBand
+```
+
+---
+
+## 12.2. Kết quả bộ test ban đầu
+
+Bộ test ban đầu:
+
+```text
+14/14 Test Cases PASS
+```
+
+Coverage:
+
+| Chỉ số | Kết quả ban đầu |
+|---|---:|
+| Statements | 89.41% |
+| Branches | 79.48% |
+| Functions | 100% |
+| Lines | 89.15% |
+
+Các dòng chưa được thực thi:
+
+```text
+140-143
+170
+227
+252-259
+```
+
+### Nguyên nhân
+
+Các testcase Black-box ban đầu chưa kích hoạt được các trường hợp:
+
+```text
+VNPay Payment Failed
+Order Not Found
+Missing VNPay Secret
+Database Exception
+Non-string Query
+Payment Fallback
+cart.products || []
+req.ip || "127.0.0.1"
+```
+
+---
+
+## 12.3. Bổ sung White-box Test
+
+Sau khi phân tích các branch chưa được phủ, các testcase `TC_CHK_15 → TC_CHK_25` được bổ sung.
+
+Các testcase này sử dụng:
+
+```text
+jest.fn()
+mockResolvedValue()
+mockRejectedValueOnce()
+jest.spyOn()
+Mock Request
+Getter động
+Crypto HMAC
+```
+
+Mục tiêu là kích hoạt các branch nội bộ mà request Black-box thông thường không thể tạo ổn định.
+
+---
+
+## 12.4. Kết quả cuối cùng
+
+```text
+Test Suites: 1 passed, 1 total
+Tests:       25 passed, 25 total
+Snapshots:   0
+Failed:      0
+```
+
+Coverage riêng cho:
+
+```text
+checkout.controller.ts
+```
+
+| File | Statements | Branches | Functions | Lines | Uncovered Lines |
+|---|---:|---:|---:|---:|---|
 | `checkout.controller.ts` | **100%** | **100%** | **100%** | **100%** | Không còn |
 
-#### So sánh trước và sau
+---
 
-| Chỉ số | Trước | Sau | Mức tăng |
-| :--- | ---: | ---: | ---: |
+## 12.5. So sánh trước và sau
+
+| Coverage | Ban đầu | Sau khi bổ sung White-box | Mức tăng |
+|---|---:|---:|---:|
 | Statements | 89.41% | **100%** | +10.59% |
 | Branches | 79.48% | **100%** | +20.52% |
 | Functions | 100% | **100%** | 0% |
@@ -569,228 +776,286 @@ Coverage riêng `checkout.controller.ts`:
 
 ---
 
-### 5. Ma trận các nhánh quan trọng đã được phủ
+# 13. PHÂN TÍCH SỐ TESTCASE VÀ ĐỘ BAO PHỦ
 
-| STT | Điều kiện / Branch | True | False / Fallback | Test tiêu biểu |
-| :-: | :--- | :--- | :--- | :--- |
-| 1 | `!validation.success` | Validation Error | Đi tiếp | `TC_CHECKOUT_BVA_02`, `TC_CHECKOUT_BVA_01` |
-| 2 | `!cart` | Cart không tồn tại | Cart tồn tại | `TC_CHECKOUT_EMPTY_02`, `TC_CHECKOUT_EMPTY_01` |
-| 3 | `!Array.isArray(cart.products)` | Reject | Đi tiếp | `TC_CHECKOUT_EXTRA_19`, các test valid |
-| 4 | `products.length === 0` | Reject | Có sản phẩm | `TC_CHECKOUT_EMPTY_01`, `TC_CHECKOUT_BVA_01` |
-| 5 | `totalPrice === 0` | Reject | Có giá trị | `TC_CHECKOUT_EXTRA_20`, các test valid |
-| 6 | `typePayment === "cod"` | COD Flow | Sang check VNPay | `TC_CHECKOUT_EP_09` |
-| 7 | `typePayment === "vnpay"` | VNPay Flow | Invalid Payment fallback | `TC_CHECKOUT_EP_09`, `TC_CHECKOUT_EXTRA_21` |
-| 8 | `tmnSecret` tồn tại | Tiếp tục HMAC | 500 Missing Secret | `TC_CHECKOUT_VNPAY_12`, `TC_CHECKOUT_EXTRA_13` |
-| 9 | Query value là String | Clone param | Bỏ qua value khác String | Callback tests, `TC_CHECKOUT_EXTRA_18` |
-| 10 | SecureHash hợp lệ | Đi tiếp | INVALID_CHECKSUM | `TC_CHECKOUT_VNPAY_12`, `TC_CHECKOUT_VNPAY_11` |
-| 11 | `!order` | 404 | Order tồn tại | `TC_CHECKOUT_EXTRA_14`, `TC_CHECKOUT_VNPAY_12` |
-| 12 | `vnp_ResponseCode === "00"` | Success | Failed | `TC_CHECKOUT_VNPAY_12`, `TC_CHECKOUT_EXTRA_15` |
-| 13 | `cart.products \|\| []` | Dùng products | Fallback `[]` | Valid checkout, `TC_CHECKOUT_EXTRA_22` |
-| 14 | `req.ip \|\| "127.0.0.1"` | Dùng IP request | Fallback localhost | VNPay request, `TC_CHECKOUT_EXTRA_23` |
-| 15 | `catch` createCheckout | 500 | Normal Flow | `TC_CHECKOUT_EXTRA_16`, các test valid |
-| 16 | `catch` vnpayCallback | 500 | Normal Flow | `TC_CHECKOUT_EXTRA_17`, các callback valid |
+## 13.1. Bộ test EP/BVA có đạt 100% Coverage không?
+
+Không.
+
+Bộ test Black-box/EP/BVA ban đầu có:
+
+```text
+14 testcase
+14/14 PASS
+```
+
+nhưng chỉ đạt:
+
+```text
+Line Coverage   = 89.15%
+Branch Coverage = 79.48%
+```
+
+Do đó việc testcase đều PASS không đồng nghĩa với toàn bộ code đã được bao phủ.
 
 ---
 
-## 🟢 PHẦN 4: ĐÁNH GIÁ ĐỘ PHÙ HỢP CỦA PHƯƠNG PHÁP (METHODOLOGY EVALUATION)
+## 13.2. Bao nhiêu testcase để đạt 100%?
 
-### 1. Điểm mạnh của Black-box Testing (EP / BVA)
+Không thể kết luận rằng:
 
-#### 1.1. Kiểm soát dữ liệu vận chuyển
+```text
+25 testcase BVA = 100%
+```
 
-BVA kiểm tra chính xác các ngưỡng:
+vì điều này không chính xác.
 
-- Phone: 9, 10, 11 chữ số.
-- Address: 9, 10, 200, 201 ký tự.
+Bộ test cuối gồm:
 
-Qua đó đảm bảo dữ liệu Shipping tuân thủ các ràng buộc trước khi tạo đơn.
+```text
+14 testcase ban đầu
++
+11 testcase White-box bổ sung
+=
+25 testcase
+```
 
-#### 1.2. Ngăn checkout khi giỏ hàng không hợp lệ
+Sau khi kết hợp cả hai nhóm:
 
-EP xác định các phân vùng:
+```text
+25/25 PASS
+Branch Coverage = 100%
+Line Coverage   = 100%
+```
 
-- Cart không tồn tại.
-- `products = []`.
-- `products` không phải Array.
-- `totalPrice = 0`.
-- Cart hợp lệ.
+Do đó kết luận đúng là:
 
-Các test xác nhận controller không tạo đơn khi Cart không đáp ứng điều kiện nghiệp vụ.
-
-#### 1.3. Kiểm tra Enum Whitelisting
-
-EP xác nhận hệ thống chỉ chấp nhận:
-
-- `cod`.
-- `vnpay`.
-
-Các giá trị khác bị Schema từ chối.
+> BVA và EP giúp thiết kế các testcase nghiệp vụ chính, nhưng cần bổ sung White-box/Jest Mocking để thực thi các branch nội bộ còn thiếu.
 
 ---
 
-### 2. Các "Điểm mù" của Black-box và cách White-box giải quyết
+# 14. ĐÁNH GIÁ SỰ PHÙ HỢP CỦA PHƯƠNG PHÁP KIỂM THỬ
 
-```mermaid
-graph LR
-subgraph BlindSpots ["Điểm mù của Blackbox"]
-B1["Khó tạo Valid HMAC-SHA512"]
-B2["Phụ thuộc VNPay Sandbox"]
-B3["Khó ép lỗi DB"]
-B4["Khó đi vào Payment Fallback do Zod chặn"]
-B5["Khó tạo req.ip = undefined"]
-B6["Khó làm cart.products thay đổi giữa các lần truy cập"]
-end
+## 14.1. Equivalence Partitioning
 
-subgraph Solutions ["Whitebox + Jest Mocking"]
-W1["crypto.createHmac với Secret mock"]
-W2["Supertest mô phỏng Callback"]
-W3["mockRejectedValueOnce"]
-W4["Spy checkoutSchema.safeParse"]
-W5["Gọi trực tiếp createCheckout bằng mock Request"]
-W6["Getter động cho cart.products"]
-end
+EP phù hợp với module Checkout vì các input có thể chia thành những nhóm hành vi rõ ràng.
 
-B1 ==> W1
-B2 ==> W2
-B3 ==> W3
-B4 ==> W4
-B5 ==> W5
-B6 ==> W6
+Ví dụ:
+
+```text
+Payment:
+Valid   -> cod / vnpay
+Invalid -> paypal
 ```
 
-#### 2.1. Xác thực chữ ký HMAC-SHA512
-
-White-box sử dụng `crypto.createHmac()` với Secret mock để tạo chữ ký hợp lệ:
-
-```typescript
-const validHash = crypto
-.createHmac("sha512", tmnSecret)
-.update(Buffer.from(signData, "utf-8"))
-.digest("hex");
+```text
+Phone:
+Valid   -> 10 số + prefix hợp lệ
+Invalid -> sai số lượng / sai prefix
 ```
 
-Đồng thời test Tampered Hash chủ động sử dụng chữ ký sai để xác nhận controller trả `INVALID_CHECKSUM`.
-
-#### 2.2. Giả lập VNPay Callback
-
-Không cần phụ thuộc hoàn toàn vào Sandbox thật.
-
-Supertest gọi trực tiếp:
-
-`GET /api/checkout/vnpay-callback`
-
-với các Query khác nhau để mô phỏng:
-
-- Payment Success.
-- Payment Failure.
-- Invalid Hash.
-- Missing Secret.
-- Order Not Found.
-
-#### 2.3. Kiểm thử Error Handling
-
-Các test:
-
-- `TC_CHECKOUT_EXTRA_16`.
-- `TC_CHECKOUT_EXTRA_17`.
-
-sử dụng `mockRejectedValueOnce(new Error(...))` để ép Database ném exception.
-
-Qua đó hai block `catch` đều được thực thi và xác nhận trả HTTP 500.
-
-#### 2.4. Kiểm thử Payment Fallback bị Schema bảo vệ
-
-Luồng thật:
-
-`paypal` → Zod Reject → không xuống được fallback controller.
-
-White-box giải quyết bằng:
-
-```typescript
-jest.spyOn(checkoutSchema, "safeParse").mockReturnValueOnce({
-success: true,
-data: {
-typePayment: "paypal",
-shippingInfo: validShippingInfo,
-},
-} as any);
+```text
+Cart:
+Valid   -> Có sản phẩm + totalPrice > 0
+Invalid -> Empty / Missing / Invalid structure
 ```
 
-Mục tiêu không phải cho phép Paypal trong production mà để **cô lập và kiểm thử controller**.
-
-#### 2.5. Kiểm thử các Logical Fallback hiếm gặp
-
-Hai nhánh cuối:
-
-```typescript
-products: cart.products || []
-```
-
-và:
-
-```typescript
-req.ip || "127.0.0.1"
-```
-
-khó đạt qua HTTP request thông thường.
-
-Nhóm giải quyết bằng:
-
-- Getter động cho `cart.products`.
-- Mock Request không có thuộc tính `ip`.
-
-Nhờ đó Istanbul/Jest ghi nhận toàn bộ branch.
+Nhờ đó không cần kiểm tra mọi giá trị có thể xảy ra nhưng vẫn đại diện được các nhóm dữ liệu quan trọng.
 
 ---
 
-### 3. Kết luận QA về Module Checkout
+## 14.2. Boundary Value Analysis
 
-#### A. Tổng hợp kết quả kiểm thử tự động
+BVA phù hợp với:
 
-- **25/25 Test Cases PASSED**.
-- **Pass Rate = 100%**.
-- **0 test failed**.
-- `checkout.controller.ts` đạt:
-- **100% Statement Coverage**.
-- **100% Branch Coverage**.
-- **100% Function Coverage**.
-- **100% Line Coverage**.
+```text
+phoneNumber
+address
+```
 
-#### B. So sánh với trạng thái ban đầu
+vì hai trường này có ranh giới cụ thể.
 
-Trước khi bổ sung White-box tests:
+Các giá trị được kiểm tra ngay tại và ngay ngoài biên:
 
-- Statements: **89.41%**.
-- Branches: **79.48%**.
-- Functions: **100%**.
-- Lines: **89.15%**.
+```text
+Phone:
+9  - Invalid
+10 - Valid
+11 - Invalid
+```
 
-Sau khi hoàn thiện:
+```text
+Address:
+9   - Invalid
+10  - Valid
+200 - Valid
+201 - Invalid
+```
 
-- Statements: **100%**.
-- Branches: **100%**.
-- Functions: **100%**.
-- Lines: **100%**.
+BVA giúp phát hiện các lỗi như:
 
-#### C. Kết luận
+```text
+< thay vì <=
+> thay vì >=
+Sai min()
+Sai max()
+Sai regex độ dài
+```
 
-Module **Checkout & Payment** đã được kiểm tra bằng kết hợp:
+---
 
-- Equivalence Partitioning.
-- Boundary Value Analysis.
-- Security Testing.
-- Control Flow Testing.
-- Statement Coverage.
-- Branch Coverage.
-- Jest Mocking.
-- Error/Exception Testing.
+## 14.3. Hạn chế của Black-box
 
-Các luồng chính COD, VNPay, Empty Cart Guard, Shipping Validation và VNPay Callback đều được kiểm thử.
+Black-box chỉ quan sát input và output nên khó kiểm soát trạng thái bên trong chương trình.
 
-Các nhánh khó đạt trong môi trường request bình thường cũng đã được cô lập và thực thi bằng White-box/Jest Mocking mà không cần thay đổi logic production.
+Các tình huống khó tạo bằng Postman:
 
-### ✅ SIGN-OFF VERDICT
+```text
+Database tự ném exception
+VNPay Secret bị thiếu
+Order lookup trả về null đúng thời điểm
+Query Parameter trở thành Array
+req.ip = undefined
+cart.products thay đổi giữa các lần truy cập
+Bypass Zod để kiểm tra Payment fallback
+```
 
-**Checkout Controller đạt 100% Statements, 100% Branches, 100% Functions và 100% Lines với 25/25 test cases PASS.**
+---
 
-Module **Checkout & Payment** đã hoàn thành mục tiêu độ bao phủ theo yêu cầu của bài kiểm thử.
+## 14.4. Vai trò của White-box
+
+White-box cho phép kiểm soát trực tiếp:
+
+```text
+Mock Database
+Mock Environment Variable
+Mock Request
+Mock Schema
+Mock Crypto
+Getter động
+```
+
+Nhờ đó các branch nội bộ có thể được thực thi có chủ đích.
+
+---
+
+## 14.5. Đánh giá chung
+
+| Phương pháp | Phù hợp | Vai trò |
+|---|---|---|
+| EP | Có | Phân chia các nhóm input hợp lệ / không hợp lệ |
+| BVA | Có | Kiểm tra các giá trị tại biên |
+| Postman Black-box | Có | Kiểm tra API thực tế |
+| Security Testing | Có | Kiểm tra VNPay HMAC-SHA512 |
+| White-box | Có | Kiểm tra branch nội bộ |
+| Jest Mocking | Có | Tạo các trạng thái khó xảy ra ngoài thực tế |
+| Branch Coverage | Có | Đo mức độ thực thi các nhánh điều kiện |
+
+### Kết luận phương pháp
+
+EP và BVA **phù hợp với việc thiết kế bộ test Checkout**, đặc biệt cho Shipping Validation và Payment Type.
+
+Tuy nhiên, EP/BVA **không đủ để đạt 100% Branch Coverage**.
+
+Vì vậy phương pháp phù hợp nhất cho module Checkout là:
+
+```text
+Black-box
++ EP
++ BVA
++ Postman
++ White-box
++ Jest Mocking
++ Coverage Analysis
+```
+
+---
+
+# 15. TỔNG KẾT KẾT QUẢ KIỂM THỬ
+
+| Tiêu chí | Kết quả |
+|---|---|
+| Tổng testcase Jest | **25** |
+| Test PASS | **25** |
+| Test FAIL | **0** |
+| Pass Rate | **100%** |
+| Statement Coverage | **100%** |
+| Branch Coverage | **100%** |
+| Function Coverage | **100%** |
+| Line Coverage | **100%** |
+
+Các nhóm chức năng đã được kiểm thử:
+
+```text
+Shipping Validation
+Empty Cart Guard
+Cart Not Found
+COD Checkout
+VNPay Checkout
+Invalid Payment Method
+VNPay Tampered Hash
+VNPay Valid Callback
+VNPay Failure
+Order Not Found
+Missing Secret
+Database Exception
+Logical Fallback
+```
+
+---
+
+# 16. KẾT LUẬN
+
+Module **Checkout & Payment** đã được kiểm thử bằng sự kết hợp giữa Black-box và White-box Testing.
+
+Bộ test ban đầu sử dụng **Equivalence Partitioning và Boundary Value Analysis** để kiểm tra các yêu cầu nghiệp vụ chính như:
+
+```text
+Phone Validation
+Address Validation
+Cart Validation
+COD / VNPay
+VNPay Checksum
+```
+
+Bộ test này gồm:
+
+```text
+14 testcase
+```
+
+và đạt:
+
+```text
+89.41% Statement Coverage
+79.48% Branch Coverage
+100% Function Coverage
+89.15% Line Coverage
+```
+
+Qua phân tích Coverage, các branch chưa được thực thi được xác định và bổ sung thêm **11 testcase White-box/Jest Mocking**.
+
+Bộ test cuối cùng gồm:
+
+```text
+25 testcase
+25/25 PASS
+0 Failed
+```
+
+Kết quả cuối cho `checkout.controller.ts`:
+
+```text
+Statements = 100%
+Branches   = 100%
+Functions  = 100%
+Lines      = 100%
+```
+
+Qua kết quả trên có thể kết luận:
+
+> **EP và BVA phù hợp để kiểm thử các vùng dữ liệu nghiệp vụ và giá trị biên, nhưng để đạt độ bao phủ đầy đủ cần kết hợp thêm White-box Testing và Jest Mocking cho các branch nội bộ khó đạt bằng request thông thường.**
+
+## FINAL VERDICT
+
+**Checkout Controller đạt 100% Statement Coverage, 100% Branch Coverage, 100% Function Coverage và 100% Line Coverage với 25/25 testcase PASS.**
