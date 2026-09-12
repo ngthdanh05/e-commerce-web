@@ -63,7 +63,7 @@ const createCollections = () => {
   return { cartCol, productCol };
 };
 
-describe("Cart controller", () => {
+describe("SCRUM-28: Cart Module Validation & Handler Test Suite", () => {
   let errorSpy: jest.SpyInstance;
 
   beforeEach(() => {
@@ -75,17 +75,15 @@ describe("Cart controller", () => {
     errorSpy.mockRestore();
   });
 
-  describe("getCart", () => {
-    it("returns unauthorized when the request has no user", async () => {
+  describe("GET /api/cart - Get User Cart", () => {
+    it("TC-CART-01: [Unauthorized] Returns 400 when request has no authenticated user", async () => {
       const response = createResponse();
-
       await getCart(createRequest({}, false), response);
-
       expect(response.status).toHaveBeenCalledWith(400);
       expect(response.json).toHaveBeenCalledWith({ error: "UNAUTHORIZED" });
     });
 
-    it("returns an empty cart when no cart exists", async () => {
+    it("TC-CART-02: [Empty Cart] Returns default empty cart structure when no cart document exists", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue(null);
       const response = createResponse();
@@ -98,7 +96,7 @@ describe("Cart controller", () => {
       });
     });
 
-    it("returns cart data without the database id", async () => {
+    it("TC-CART-03: [Valid Cart] Returns active cart data excluding database _id", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -120,7 +118,7 @@ describe("Cart controller", () => {
       });
     });
 
-    it("returns 500 when the cart lookup fails", async () => {
+    it("TC-CART-04: [DB Error 500] Throws 500 when database collection query fails", async () => {
       (cartCollection.getCollection as jest.Mock).mockRejectedValue(
         new Error("db"),
       );
@@ -135,30 +133,23 @@ describe("Cart controller", () => {
     });
   });
 
-  describe("addToCart", () => {
-    it("returns unauthorized when the request has no user", async () => {
+  describe("POST /api/cart - Add Item to Cart", () => {
+    it("TC-CART-05: [Unauthorized] Reject adding item when unauthenticated", async () => {
       const response = createResponse();
-
-      await addToCart(
-        createRequest({ productId, quantity: 1 }, false),
-        response,
-      );
-
+      await addToCart(createRequest({ productId, quantity: 1 }, false), response);
       expect(response.status).toHaveBeenCalledWith(400);
     });
 
-    it("rejects a missing product id or quantity", async () => {
+    it("TC-CART-06: [Missing Fields] Reject request missing productId or quantity", async () => {
       const response = createResponse();
-
       await addToCart(createRequest({ productId }), response);
-
       expect(response.status).toHaveBeenCalledWith(400);
       expect(response.json).toHaveBeenCalledWith({
         error: "Missing productId or quantity",
       });
     });
 
-    it("returns 404 when the product does not exist", async () => {
+    it("TC-CART-07: [Product Not Found] Return 404 when product ID does not exist in DB", async () => {
       const { productCol } = createCollections();
       productCol.findOne.mockResolvedValue(null);
       const response = createResponse();
@@ -168,7 +159,7 @@ describe("Cart controller", () => {
       expect(response.status).toHaveBeenCalledWith(404);
     });
 
-    it("inserts a new cart using the database price", async () => {
+    it("TC-CART-08: [New Cart] Create brand new cart document using current DB price", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue(null);
       const response = createResponse();
@@ -191,14 +182,12 @@ describe("Cart controller", () => {
       });
     });
 
-    it("updates an existing item and recalculates its price", async () => {
+    it("TC-CART-09: [Update Quantity] Add quantity to existing item in cart and recalculate total", async () => {
       const { cartCol, productCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
         userId,
-        products: [
-          { productId, name: "Old", imageUrl: "old", price: 1, quantity: 2 },
-        ],
+        products: [{ productId, name: "Old", imageUrl: "old", price: 1, quantity: 2 }],
         totalPrice: 2,
       });
       const response = createResponse();
@@ -217,15 +206,13 @@ describe("Cart controller", () => {
       );
     });
 
-    it("adds a different item to an existing cart", async () => {
+    it("TC-CART-10: [Add New Item] Append distinct product to existing cart array", async () => {
       const { cartCol, productCol } = createCollections();
       productCol.find.mockReturnValue({
-        toArray: jest
-          .fn()
-          .mockResolvedValue([
-            product,
-            { _id: "other", name: "Other", imageUrl: "other", price: 100 },
-          ]),
+        toArray: jest.fn().mockResolvedValue([
+          product,
+          { _id: "other", name: "Other", imageUrl: "other", price: 100 },
+        ]),
       });
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -251,7 +238,7 @@ describe("Cart controller", () => {
       );
     });
 
-    it("returns 500 when recalculation cannot find a cart product", async () => {
+    it("TC-CART-11: [DB Error 500] Throw 500 when product lookup fails during calculation", async () => {
       const { cartCol, productCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -269,7 +256,7 @@ describe("Cart controller", () => {
       expect(response.status).toHaveBeenCalledWith(500);
     });
 
-    it("returns 500 when adding fails", async () => {
+    it("TC-CART-12: [DB Exception 500] Throw 500 on database connection exception", async () => {
       (productCollection.getCollection as jest.Mock).mockRejectedValue(
         new Error("db"),
       );
@@ -281,8 +268,8 @@ describe("Cart controller", () => {
     });
   });
 
-  describe("updateCart", () => {
-    it("handles unauthorized, missing cart, and missing item", async () => {
+  describe("PUT /api/cart - Update Cart Item Quantity", () => {
+    it("TC-CART-13: [Validation & Missing] Handle unauthenticated, missing cart, and missing item", async () => {
       const unauthorized = createResponse();
       await updateCart(
         createRequest({ productId, quantity: 1 }, false),
@@ -302,7 +289,7 @@ describe("Cart controller", () => {
       expect(missingItem.status).toHaveBeenCalledWith(404);
     });
 
-    it("removes an item when quantity is zero", async () => {
+    it("TC-CART-14: [Remove Item] Remove product item completely when quantity updated to 0", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -319,7 +306,7 @@ describe("Cart controller", () => {
       );
     });
 
-    it("updates an item when quantity is positive", async () => {
+    it("TC-CART-15: [Valid Update] Update item quantity to positive value and recalculate total", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -339,7 +326,7 @@ describe("Cart controller", () => {
       );
     });
 
-    it("returns 500 when updating fails", async () => {
+    it("TC-CART-16: [DB Error 500] Return 500 error when update query fails", async () => {
       (cartCollection.getCollection as jest.Mock).mockRejectedValue(
         new Error("db"),
       );
@@ -351,8 +338,8 @@ describe("Cart controller", () => {
     });
   });
 
-  describe("deleteCart", () => {
-    it("handles unauthorized, missing cart, and missing item", async () => {
+  describe("DELETE /api/cart - Remove Cart Item", () => {
+    it("TC-CART-17: [Validation] Reject unauthenticated, missing cart or item deletion", async () => {
       const unauthorized = createResponse();
       await deleteCart(createRequest({ productId }, false), unauthorized);
       expect(unauthorized.status).toHaveBeenCalledWith(400);
@@ -369,7 +356,7 @@ describe("Cart controller", () => {
       expect(missingItem.status).toHaveBeenCalledWith(404);
     });
 
-    it("deletes an item and recalculates the total", async () => {
+    it("TC-CART-18: [Delete Success] Delete target product and recalculate cart total", async () => {
       const { cartCol } = createCollections();
       cartCol.findOne.mockResolvedValue({
         _id: new ObjectId(),
@@ -392,7 +379,7 @@ describe("Cart controller", () => {
       );
     });
 
-    it("returns 500 when deleting fails", async () => {
+    it("TC-CART-19: [DB Error 500] Return 500 when deletion database call throws exception", async () => {
       (cartCollection.getCollection as jest.Mock).mockRejectedValue(
         new Error("db"),
       );
@@ -403,29 +390,29 @@ describe("Cart controller", () => {
       expect(response.status).toHaveBeenCalledWith(500);
     });
   });
-});
 
-describe("Cart schemas", () => {
-  it("accepts valid add and update quantities", () => {
-    expect(addToCartSchema.parse({ productId, quantity: 1 })).toEqual({
-      productId,
-      quantity: 1,
+  describe("Cart Schemas - Boundary Value Analysis (BVA)", () => {
+    it("TC-CART-20: [Valid Schemas] Accept valid add and update quantities", () => {
+      expect(addToCartSchema.parse({ productId, quantity: 1 })).toEqual({
+        productId,
+        quantity: 1,
+      });
+      expect(addToCartSchema.parse({ productId, quantity: 99 })).toEqual({
+        productId,
+        quantity: 99,
+      });
+      expect(updateCartSchema.parse({ productId, quantity: 0 })).toEqual({
+        productId,
+        quantity: 0,
+      });
     });
-    expect(addToCartSchema.parse({ productId, quantity: 99 })).toEqual({
-      productId,
-      quantity: 99,
-    });
-    expect(updateCartSchema.parse({ productId, quantity: 0 })).toEqual({
-      productId,
-      quantity: 0,
-    });
-  });
 
-  it("rejects invalid quantity boundaries and product ids", () => {
-    expect(() => addToCartSchema.parse({ productId, quantity: 0 })).toThrow();
-    expect(() => addToCartSchema.parse({ productId, quantity: 100 })).toThrow();
-    expect(() => addToCartSchema.parse({ productId, quantity: 1.5 })).toThrow();
-    expect(() => updateCartSchema.parse({ productId, quantity: -1 })).toThrow();
-    expect(() => deleteCartItemSchema.parse({ productId: "" })).toThrow();
+    it("TC-CART-21: [Boundary Validation] Reject invalid quantity boundaries and product ids", () => {
+      expect(() => addToCartSchema.parse({ productId, quantity: 0 })).toThrow();
+      expect(() => addToCartSchema.parse({ productId, quantity: 100 })).toThrow();
+      expect(() => addToCartSchema.parse({ productId, quantity: 1.5 })).toThrow();
+      expect(() => updateCartSchema.parse({ productId, quantity: -1 })).toThrow();
+      expect(() => deleteCartItemSchema.parse({ productId: "" })).toThrow();
+    });
   });
 });
