@@ -1,155 +1,203 @@
 # 📄 BÁO CÁO KIỂM THỬ TÍNH NĂNG CART MANAGEMENT
 
-## 🟢 PHẦN 1: BỘ TEST CASE BLACKBOX (EP + BVA)
+## 🟢 PHẦN 1: BỘ TEST CASE BLACKBOX (EP + BVA) & KIỂM THỬ CHỨC NĂNG
 
-### 1. Phân tích Phân vùng tương đương (Equivalence Partitioning - EP) & Giá trị biên (Boundary Value Analysis - BVA)
+### 1. Mô tả bài toán (Problem Description)
 
-## PHẦN 1: BỘ TEST CASE BLACKBOX (EP + BVA)
+Hệ thống **Cart Management** của nền tảng E-Commerce cung cấp các giao diện lập trình ứng dụng (RESTful API) chịu trách nhiệm quản lý vòng đời giỏ hàng người dùng, đảm bảo tính toàn vẹn dữ liệu giá tiền (Anti-tampering), kiểm tra ràng buộc số lượng hàng hóa và tự động đồng bộ giá trị giỏ hàng với cơ sở dữ liệu. Các dịch vụ API bao gồm:
 
-### 1. Phân tích Phân vùng tương đương (EP) & Giá trị biên (BVA) cho `quantity` (Cart Module)
+1. **Lấy thông tin giỏ hàng** (`GET /api/cart`): Truy vấn dữ liệu giỏ hàng của người dùng hiện tại từ CSDL. Nếu người dùng chưa từng thêm sản phẩm nào vào giỏ, hệ thống trả về cấu trúc giỏ hàng rỗng mặc định `{ products: [], totalPrice: 0 }`.
+2. **Thêm sản phẩm vào giỏ hàng** (`POST /api/cart/add`): Tiếp nhận yêu cầu thêm sản phẩm với số lượng xác định.
+   - Nếu giỏ hàng chưa tồn tại $\to$ Tự động khởi tạo giỏ hàng mới và ghi nhận sản phẩm đầu tiên.
+   - Nếu giỏ hàng đã tồn tại và sản phẩm đã có mặt trong giỏ $\to$ Thực hiện cộng dồn số lượng (`quantity += newQuantity`).
+   - Nếu giỏ hàng đã tồn tại nhưng sản phẩm chưa có $\to$ Push thêm một phần tử sản phẩm mới vào mảng `products`.
+   - **Cơ chế chống giả mạo giá (Anti-tampering Price Guard)**: Máy chủ tuyệt đối không tin tưởng trường `price` do Client gửi lên; giá sản phẩm luôn được truy vấn trực tiếp từ Document gốc trong MongoDB và tính lại tổng tiền qua hàm helper `recalculateCartTotal`.
+3. **Cập nhật số lượng sản phẩm** (`PUT /api/cart/update`): Điều chỉnh số lượng sản phẩm trong giỏ hàng.
+   - Nếu `quantity > 0` $\to$ Cập nhật số lượng mới và tính toán lại tổng tiền.
+   - Nếu `quantity === 0` $\to$ Tự động loại bỏ hoàn toàn sản phẩm khỏi giỏ hàng (`splice`) và tính toán lại tổng tiền.
+4. **Xóa sản phẩm khỏi giỏ hàng** (`DELETE /api/cart/delete`): Xóa một sản phẩm cụ thể ra khỏi mảng `products` của giỏ hàng và cập nhật lại `totalPrice`.
 
-| Test Case ID | Mô tả kịch bản kiểm thử | Phân loại kỹ thuật | API Endpoint & Payload | Expected Status | Response Body / Outcome Kỳ vọng | Tên Test Case trong Jest (`it(...)`) |
-| :--- | :--- | :--- | :--- | :---: | :--- | :--- |
-| **`TC_CART_EP_01`** | [EP Valid] `quantity` trong khoảng $[1, 99]$ $\to$ Accept 200 | EP (Valid Range) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 5 }` | **200** | `res.status == 200`<br>Thêm vào giỏ hàng thành công | `it("TC-CART-EP-01: [EP Valid] Quantity trong khoảng [1, 99] -> Accept 200")` |
-| **`TC_CART_EP_02`** | [EP Invalid] `quantity` số âm $\le 0$ $\to$ Reject 400 | EP (Invalid Negative) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: -5 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-EP-02: [EP Invalid] Quantity <= 0 -> Reject 400")` |
-| **`TC_CART_EP_03`** | [EP Invalid] `quantity` vượt ngưỡng $> 99$ $\to$ Reject 400 | EP (Invalid Upper Bound) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 150 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-EP-03: [EP Invalid] Quantity > 99 -> Reject 400")` |
-| **`TC_CART_EP_04`** | [EP Invalid Float] `quantity` là số thực/thập phân $\to$ Reject 400 | EP (Invalid Type - Decimal) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 2.5 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-EP-04: [EP Invalid Float] Quantity là số thực/thập phân -> Reject 400")` |
-| **`TC_CART_EP_05`** | [EP Invalid Type] `quantity` dạng Chuỗi/Boolean $\to$ Reject 400 | EP (Invalid Type - String/Bool) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: "five" }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-EP-05: [EP Invalid Type] Quantity không phải kiểu số -> Reject 400")` |
-| **`TC_CART_BVA_01`** | [BVA Min-] `quantity = 0` $\to$ Reject 400 | BVA ($\text{Min}^-$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 0 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-BVA-01: [BVA Min-] Quantity = 0 -> Reject 400")` |
-| **`TC_CART_BVA_02`** | [BVA Min] `quantity = 1` $\to$ Accept 200 | BVA ($\text{Min}$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 1 }` | **200** | `res.status == 200`<br>Zod Schema: `z.number().int().min(1).max(99)` | `it("TC-CART-BVA-02: [BVA Min] Quantity = 1 -> Accept 200")` |
-| **`TC_CART_BVA_03`** | [BVA Nom] `quantity = 50` $\to$ Accept 200 | BVA ($\text{Nom}$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 50 }` | **200** | `res.status == 200`<br>Zod Schema: `z.number().int().min(1).max(99)` | `it("TC-CART-BVA-03: [BVA Nom] Quantity = 50 -> Accept 200")` |
-| **`TC_CART_BVA_04`** | [BVA Max] `quantity = 99` $\to$ Accept 200 | BVA ($\text{Max}$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 99 }` | **200** | `res.status == 200`<br>Zod Schema: `z.number().int().min(1).max(99)` | `it("TC-CART-BVA-04: [BVA Max] Quantity = 99 -> Accept 200")` |
-| **`TC_CART_BVA_05`** | [BVA Max+] `quantity = 100` $\to$ Reject 400 | BVA ($\text{Max}^+$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 100 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-BVA-05: [BVA Max+] Quantity = 100 -> Reject 400")` |
+#### Bảng các biến đầu vào và ràng buộc nghiệp vụ:
 
----
+| Biến đầu vào | Ý nghĩa nghiệp vụ | Kiểu dữ liệu | Miền giá trị hợp lệ & Ràng buộc nghiệp vụ |
+| :--- | :--- | :--- | :--- |
+| **`userId`** | Định danh người dùng MongoDB | Chuỗi Hex 24 ký tự | Trích xuất từ JWT Payload (`req.user._id`). Bắt buộc phải có phiên đăng nhập hợp lệ (`400 UNAUTHORIZED` nếu thiếu) |
+| **`productId`** | Mã định danh sản phẩm | Chuỗi ký tự (`String`) | Chuỗi ký tự không rỗng (`z.string().min(1)`), phải tồn tại trong collection `products` của CSDL (`404 Product not found` nếu không tồn tại) |
+| **`quantity` (Add)** | Số lượng thêm vào giỏ hàng | Số nguyên (`Integer`) | $1 \le quantity \le 99$ (`z.number().int().min(1).max(99)`). Nghiêm cấm số thực, số âm hoặc bằng 0 |
+| **`quantity` (Update)** | Số lượng cập nhật giỏ hàng | Số nguyên (`Integer`) | $0 \le quantity \le 99$ (`z.number().int().min(0).max(99)`). Giá trị $0$ mang ý nghĩa nghiệp vụ là xóa sản phẩm khỏi giỏ |
+| **`price` (Client Payload)** | Giá sản phẩm do Client gửi | Số thực (`Number`) | Không được phép can thiệp. Bị Zod schema loại bỏ hoàn toàn (Schema Stripping) và Server lấy giá CSDL |
+| **`totalPrice`** | Tổng giá trị thanh toán giỏ hàng | Số thực (`Number`) | $\text{totalPrice} = \sum_{i=1}^n (\text{price}_i \times \text{quantity}_i) \ge 0$, do hệ thống tự tính |
 
-### 2. Phân tích Chuyên sâu Cơ chế Anti-tampering Price (Chống Giả mạo Giá tiền)
+#### Mô hình Vòng đời Giỏ hàng (Cart State Lifecycle):
 
-| Test Case ID | Mô tả kịch bản kiểm thử | Phân loại kỹ thuật | API Endpoint & Payload | Expected Status | Response Body / Outcome Kỳ vọng | Tên Test Case trong Jest (`it(...)`) |
-| :--- | :--- | :--- | :--- | :---: | :--- | :--- |
-| **`TC_CART_SEC_01`** | [Security Price Guard] Client giả mạo `price = 10` VND $\to$ Server tự tính giá DB $500,000$ VND | Security (Anti-tampering) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 2, price: 10 }` | **200** | `res.status == 200`<br>Server bỏ qua `price = 10`, tính toán dựa trên `price = 500,000` của DB. | `it("TC-CART-SEC-01: [Security Price Guard] Client cố tình gửi price = 10 VND giả mạo...")` |                                                |
+```mermaid
+stateDiagram-v2
+    [*] --> EmptyCart: User chưa có giỏ hàng trong DB
+    EmptyCart --> ActiveCart: POST /api/cart/add (Khởi tạo giỏ mới & insertOne)
 
----
+    state ActiveCart {
+        [*] --> ItemExists: Thêm sản phẩm đã có sẵn
+        ItemExists --> Recalculate: Cộng dồn số lượng (index >= 0)
 
-#### Bảng 1.2: Phân tích Giá trị biên (Boundary Value Analysis - BVA) cho tham số `quantity` (Cart Module)
+        [*] --> ItemNew: Thêm sản phẩm chưa có
+        ItemNew --> Recalculate: Push item mới vào mảng (index < 0)
 
-Theo lý thuyết BVA tiêu chuẩn trong tài liệu Chương 4: đối với biến số nguyên `quantity` khi thêm vào giỏ hàng có miền giá trị hợp lệ $[\text{Min}, \text{Max}] = [1, 99]$, số lượng kịch bản biên cần kiểm tra bao gồm **5 điểm biên chính**:
+        [*] --> ItemUpdate: PUT /api/cart/update (quantity > 0)
+        ItemUpdate --> Recalculate: Gán số lượng mới
 
-- $\text{Min}^-$ (Ngay dưới cận dưới - Không hợp lệ)
-- $\text{Min}$ (Cận dưới nhỏ nhất - Hợp lệ)
-- $\text{Nom}$ (Giá trị điển hình - Hợp lệ)
-- $\text{Max}$ (Cận trên lớn nhất - Hợp lệ)
-- $\text{Max}^+$ (Ngay trên cận trên - Không hợp lệ)
+        [*] --> ItemRemoveZero: PUT /api/cart/update (quantity == 0)
+        ItemRemoveZero --> Recalculate: Xóa khỏi mảng (splice)
 
-| Trường kiểm thử                    | Ngưỡng đặc tả | Điểm biên ($\text{Min}^-$, $\text{Min}$, $\text{Nom}$, $\text{Max}$, $\text{Max}^+$)                               | Giá trị đại diện (Payload Data)                                                                                                                                                                                                        | Kết quả kỳ vọng                                                            | Ghi chú kỹ thuật                              |
-| :--------------------------------- | :------------ | :----------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :-------------------------------------------- |
-| **`quantity`** (Số lượng sản phẩm) | $[1, 99]$     | • $\text{Min}^- = 0$<br>• $\text{Min} = 1$<br>• $\text{Nom} = 50$<br>• $\text{Max} = 99$<br>• $\text{Max}^+ = 100$ | • `{ productId: "prod_123", quantity: 0 }`<br>• `{ productId: "prod_123", quantity: 1 }`<br>• `{ productId: "prod_123", quantity: 50 }`<br>• `{ productId: "prod_123", quantity: 99 }`<br>• `{ productId: "prod_123", quantity: 100 }` | • 400 Bad Request<br>• 200 OK<br>• 200 OK<br>• 200 OK<br>• 400 Bad Request | Zod Schema: `z.number().int().min(1).max(99)` |
+        [*] --> ItemDelete: DELETE /api/cart/delete
+        ItemDelete --> Recalculate: Xóa khỏi mảng (splice)
 
-### 2. Phân tích Chuyên sâu Cơ chế Anti-tampering Price (Chống Giả mạo Giá tiền)
+        Recalculate --> UpdateDB: recalculateCartTotal() & updateOne()
+    }
 
-Trong các sàn thương mại điện tử, lỗ hổng Client-Side Price Tampering (Sửa giá phía Client) là một trong những rủi ro tài chính nghiêm trọng nhất (thuộc OWASP API Security Top 10 - API3: Broken Object Property Level Authorization).
-
-A. Kịch bản tấn công giả lập
-Kẻ tấn công sử dụng công cụ Proxy (như Burp Suite, Postman, Charles Proxy) để chặn gói tin POST /api/cart/add và chèn thêm thuộc tính price với giá rẻ mạt:
-{
-  "productId": "prod_123",
-  "quantity": 2,
-  "price": 10
-}
-
-#### A. Kịch bản tấn công giả lập
-
-Kẻ tấn công sử dụng công cụ Proxy (như Burp Suite, Postman, Charles Proxy) để chặn gói tin `POST /api/cart/add` và chèn thêm thuộc tính `price` với giá rẻ mạt:
-
-```json
-{
-  "productId": "prod_123",
-  "quantity": 2,
-  "price": 10
-}
+    ActiveCart --> EmptyCart: Xóa hết tất cả sản phẩm (products = [], totalPrice = 0)
 ```
 
-_(Trong khi sản phẩm `prod_123` trên CSDL có giá niêm yết là 500,000 VND. Nếu hệ thống tin tưởng Client, tổng tiền giỏ hàng sẽ chỉ còn 20 VND thay vì 1,000,000 VND)_.
+#### Kết quả trả về của hệ thống:
 
-#### B. Cơ chế phòng thủ đa tầng trong Codebase thực tế
+- **Hợp lệ (Success)**: Trả về HTTP Status `200 OK`:
+  - Lấy giỏ: `{ success: true, data: { userId, products, totalPrice } }` hoặc giỏ rỗng `{ success: true, data: { products: [], totalPrice: 0 } }`.
+  - Thêm giỏ: `{ success: true, message: "Product added to cart" }`.
+  - Cập nhật / Xóa: Đối tượng giỏ hàng mới nhất đã cập nhật mảng `products` và `totalPrice`.
+- **Lỗi phía Client (Client Error)**:
+  - `400 Bad Request`:
+    - Thiếu thông tin người dùng: `{ error: "UNAUTHORIZED" }`.
+    - Thiếu tham số bắt buộc: `{ error: "Missing productId or quantity" }`.
+    - Vi phạm Zod Schema (số âm, số thực, vượt 99, chuỗi rỗng): `{ error: "VALIDATION_ERROR" }`.
+  - `404 Not Found`:
+    - Sản phẩm không tồn tại trong CSDL: `{ error: "Product not found" }`.
+    - Giỏ hàng chưa tồn tại khi Cập nhật / Xóa: `{ message: "Cart not found" }`.
+    - Sản phẩm không có trong giỏ hàng: `{ message: "Product not in cart" }`.
+- **Lỗi hệ thống (Server Error)**:
+  - `500 Internal Server Error`: Sự cố kết nối MongoDB hoặc ngoại lệ runtime: `{ error: "INTERNAL_SERVER_ERROR" }`.
 
-1. **Lớp 1 - Schema Stripping (Zod Middleware)**:
-   - Tại [`cart.schema.ts`](file:///d:/admin/e-commerce-web/be/src/schemas/cart.schema.ts#L7-L14), `addToCartSchema` được định nghĩa nghiêm ngặt:
-     ```typescript
-     export const addToCartSchema = z.object({
-       productId: productIdSchema,
-       quantity: z.number().int().min(1).max(99),
-     });
-     ```
-   - Khi request đi qua `validate({ body: addToCartSchema })`, parser của Zod chỉ trích xuất đúng 2 trường `productId` và `quantity`. Bất kỳ trường `price` nào do client gửi lên đều bị loại bỏ hoàn toàn khỏi `req.body`.
-2. **Lớp 2 - DB Authoritative Fetching (Truy vấn nguồn tin cậy duy nhất)**:
-   - Tại [`cart.controller.ts`](file:///d:/admin/e-commerce-web/be/src/controllers/cart.controller.ts#L82-L88), Server không đọc giá từ payload mà truy vấn trực tiếp vào CSDL MongoDB:
-     ```typescript
-     const productCol = await productCollection.getCollection();
-     const product = await productCol.findOne({ _id: toMongoId(productId) });
-     // Giá được lấy độc quyền từ Document gốc trong CSDL: product.price
-     ```
-3. **Lớp 3 - Hàm tính toán lại tổng tiền độc lập (`recalculateCartTotal`)**:
-   - Tại [`cart.controller.ts`](file:///d:/admin/e-commerce-web/be/src/controllers/cart.controller.ts#L11-L48), hệ thống chạy hàm helper `recalculateCartTotal(cart)`:
-     ```typescript
-     const products = await productCol
-       .find({ _id: { $in: productIds } })
-       .toArray();
-     cart.products = cart.products.map((cartProduct) => {
-       const product = productMap.get(cartProduct.productId);
-       const price = product.price; // Giá DB chuẩn
-       totalPrice += price * cartProduct.quantity;
-       return { ...cartProduct, price };
-     });
-     cart.totalPrice = totalPrice;
-     ```
-   - Cơ chế này đảm bảo **Anti-tampering $100\%$**: Giỏ hàng luôn phản ánh đúng giá trị tiền tệ thực tế trong CSDL bất kể client cố tình thao túng payload.
+#### Giả định và công thức logic tổng quát:
+
+1. Giá sản phẩm được bảo vệ tuyệt đối (Anti-tampering): Mọi thao tác tính tiền đều lấy trực tiếp từ Document trong CSDL `product.price`.
+2. Người dùng chỉ thao tác trên giỏ hàng gắn liền với `userId` trong token của mình.
+
+- **Công thức logic kiểm tra hợp lệ khi Thêm vào giỏ (`addToCart`)**:
+  $$Valid_{AddToCart} = (userId \ne \text{null}) \land (productId \ne \text{empty}) \land Exists_{DB}(productId) \land (\text{type}(quantity) \in \mathbb{Z}) \land (1 \le quantity \le 99)$$
+
+- **Công thức logic kiểm tra hợp lệ khi Cập nhật giỏ (`updateCart`)**:
+  $$Valid_{UpdateCart} = (userId \ne \text{null}) \land Exists_{DB}(cart) \land (productId \in cart.products) \land (\text{type}(quantity) \in \mathbb{Z}) \land (0 \le quantity \le 99)$$
+
+- **Công thức logic kiểm tra hợp lệ khi Xóa khỏi giỏ (`deleteCart`)**:
+  $$Valid_{DeleteCart} = (userId \ne \text{null}) \land Exists_{DB}(cart) \land (productId \in cart.products)$$
 
 ---
 
-### 3. Danh mục Test Cases Blackbox (Test Suite Catalog)
+### 2. Xác định lớp tương đương (Equivalence Partitioning - EP)
 
-Dưới đây là bảng Test Suite Catalog ánh xạ chính xác 1:1 với 9 test functions đang được triển khai trong file [`cart.test.ts`](file:///d:/admin/e-commerce-web/be/src/tests/cart.test.ts):
+Áp dụng kỹ thuật phân hoạch tương đương, miền dữ liệu đầu vào của module Cart được phân chia thành các lớp hợp lệ (Valid Partitions) và không hợp lệ (Invalid Partitions) kèm mã Tag theo dõi độ bao phủ:
 
-| Test Case ID   | Tên Test Case                                                                                  | Kỹ thuật (EP/BVA)           | Input Payload / Request Details                                                                                                       | Expected Status Code | Expected Response / DB Assertion                                                                                           | Test Function tương ứng trong `cart.test.ts`                                                |
-| :------------- | :--------------------------------------------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :------------------: | :------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-### 1. Bảng Tổng hợp Test Case Chi tiết bao phủ 100% Code
-
-| Test Case ID | Mô tả kịch bản kiểm thử | Phân loại kỹ thuật | API Endpoint & Payload | Expected Status | Response Body / Outcome Kỳ vọng | Tên Test Case trong Jest (`it(...)`) |
-| :--- | :--- | :--- | :--- | :---: | :--- | :--- |
-| **`TC_CART_01`** | [Valid Min] `quantity = 1` $\to$ Accept 200 | BVA ($\text{Min}$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 1 }` | **200** | `res.status == 200`<br>Tạo mới Record Cart trong DB | `it("TC-CART-01: [Valid Min] Thêm vào giỏ hàng với Quantity = 1 (Min) -> Accept 200")` |
-| **`TC_CART_02`** | [Valid Max] `quantity = 99` $\to$ Accept 200 | BVA ($\text{Max}$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 99 }` | **200** | `res.status == 200`<br>Tạo mới Record Cart trong DB | `it("TC-CART-02: [Valid Max] Thêm vào giỏ hàng với Quantity = 99 (Max) -> Accept 200")` |
-| **`TC_CART_03`** | [BVA Min- Invalid] `quantity = 0` $\to$ Reject 400 | BVA ($\text{Min}^-$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 0 }` | **400** | `{ error: "VALIDATION_ERROR", details: [{ field: "quantity", message: "Quantity must be at least 1" }] }` | `it("TC-CART-03: [BVA Min- Invalid] Quantity = 0 -> Reject 400")` |
-| **`TC_CART_04`** | [BVA Min- Invalid] `quantity` số âm ($-1$) $\to$ Reject 400 | BVA (Robustness / Negative) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: -1 }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-04: [BVA Min- Invalid] Quantity số âm (-1, -10) -> Reject 400")` |
-| **`TC_CART_05`** | [BVA Max+ Invalid] `quantity = 100` $\to$ Reject 400 | BVA ($\text{Max}^+$) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 100 }` | **400** | `res.status == 400`<br>Từ chối số lượng vượt ngưỡng 99 | `it("TC-CART-05: [BVA Max+ Invalid] Quantity = 100 -> Reject 400")` |
-| **`TC_CART_06`** | [EP Invalid Float] `quantity` số thực lẻ ($1.5$) $\to$ Reject 400 | EP (Invalid Type - Decimal) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 1.5 }` | **400** | `{ error: "VALIDATION_ERROR", details: [{ field: "quantity", message: "Invalid input: expected int, received number" }] }` | `it("TC-CART-06: [EP Invalid Float] Quantity là số thập phân lẻ (1.5, 2.8) -> Reject 400")` |
-| **`TC_CART_07`** | [EP Invalid Type] `quantity` chuỗi chữ (`"five"`) $\to$ Reject 400 | EP (Invalid Type - String) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: "five" }` | **400** | `{ error: "VALIDATION_ERROR" }` | `it("TC-CART-07: [EP Invalid Type] Quantity là chuỗi chữ ('five') -> Reject 400")` |
-| **`TC_CART_08`** | [Security Price Guard] Client giả mạo `price = 10` VND $\to$ Server tự tính giá DB $500,000$ VND | Security (Anti-tampering) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 2, price: 10 }` | **200** | `res.status == 200`<br>Server bỏ qua `price = 10`, tính toán dựa trên `price = 500,000` của DB. | `it("TC-CART-08: [Security Price Guard] Client cố tình gửi price = 10 VND giả mạo...")` |
-| **`TC_CART_09`** | [Unauthenticated] Không gửi Authorization Token $\to$ Reject 401 | Security (Authentication) | `POST /api/cart/add`<br>Headers: `{}`<br>Payload: `{ productId: "prod_123", quantity: 1 }` | **401** | `{ error: "UNAUTHORIZED", message: "Token missing" }` | `it("TC-CART-09: [Unauthenticated] Không gửi Authorization Token -> Reject 401")` |
-| **`TC_CART_10`** | Cộng dồn số lượng khi sản phẩm đã tồn tại trong giỏ (`index >= 0`) | Whitebox (Branch Coverage) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 3 }` | **200** | `res.status == 200`<br>Cộng dồn số lượng `quantity = 2 + 3 = 5` & gọi `updateOne` | `it("TC-CART-10: Cộng dồn số lượng khi sản phẩm đã tồn tại trong giỏ (index >= 0)")` |
-| **`TC_CART_11`** | Push thêm item mới vào giỏ đã tồn tại (`index < 0`) | Whitebox (Branch Coverage) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_456", quantity: 1 }` | **200** | `res.status == 200`<br>Thêm item mới vào mảng `products` & gọi `updateOne` | `it("TC-CART-11: Push thêm item mới vào giỏ đã tồn tại (index < 0)")` |
-| **`TC_CART_12`** | Trả về 404 khi `productId` không tồn tại trong CSDL | Whitebox (Path Coverage) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "non_exist_id", quantity: 1 }` | **404** | `{ message: "Product not found" }` | `it("TC-CART-12: Trả về 404 khi productId không tồn tại trong CSDL")` |
-| **`TC_CART_13`** | Lấy giỏ hàng thành công khi user chưa có giỏ (Trả về giỏ rỗng) | Whitebox (Path Coverage) | `GET /api/cart`<br>Headers: `Authorization: Bearer <validToken>` | **200** | `{ products: [], totalPrice: 0 }` | `it("TC-CART-13: Lấy giỏ hàng thành công khi user chưa có giỏ (Trả về giỏ rỗng)")` |
-| **`TC_CART_14`** | Lấy giỏ hàng thành công khi user đã có giỏ hàng chứa dữ liệu | Whitebox (Path Coverage) | `GET /api/cart`<br>Headers: `Authorization: Bearer <validToken>` | **200** | `{ _id: "cart_123", products: [...], totalPrice: 200000 }` | `it("TC-CART-14: Lấy giỏ hàng thành công khi user đã có giỏ hàng chứa dữ liệu")` |
-| **`TC_CART_15`** | Cập nhật số lượng mới hợp lệ (`> 0`) cho sản phẩm trong giỏ | Whitebox (Statement Coverage) | `PUT /api/cart/update`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 5 }` | **200** | `res.status == 200`<br>Cập nhật số lượng thành 5 & gọi `updateOne` | `it("TC-CART-15: Cập nhật số lượng mới hợp lệ (>0) cho sản phẩm trong giỏ")` |
-| **`TC_CART_16`** | Tự động xóa sản phẩm khỏi giỏ khi cập nhật `quantity = 0` | Whitebox (Branch Coverage) | `PUT /api/cart/update`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 0 }` | **200** | `res.status == 200`<br>Lọc bỏ item ra khỏi giỏ & tính lại tổng tiền | `it("TC-CART-16: Tự động xóa sản phẩm khỏi giỏ khi cập nhật quantity = 0")` |
-| **`TC_CART_17`** | Cập nhật giỏ hàng - Báo lỗi 404 khi giỏ hàng không tồn tại | Whitebox (Path Coverage) | `PUT /api/cart/update`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 2 }` | **404** | `{ message: "Cart not found" }` | `it("TC-CART-17: Cập nhật giỏ hàng - Báo lỗi 404 khi giỏ hàng không tồn tại")` |
-| **`TC_CART_18`** | Cập nhật giỏ hàng - Báo lỗi 404 khi sản phẩm không có trong giỏ | Whitebox (Path Coverage) | `PUT /api/cart/update`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_999", quantity: 2 }` | **404** | `{ message: "Product not in cart" }` | `it("TC-CART-18: Cập nhật giỏ hàng - Báo lỗi 404 khi sản phẩm không có trong giỏ")` |
-| **`TC_CART_19`** | Xóa sản phẩm thành công khỏi giỏ hàng qua endpoint DELETE | Whitebox (Statement Coverage) | `DELETE /api/cart/delete`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123" }` | **200** | `res.status == 200`<br>Xóa item & gọi `updateOne` | `it("TC-CART-19: Xóa sản phẩm thành công khỏi giỏ hàng qua endpoint DELETE")` |
-| **`TC_CART_20`** | Xóa sản phẩm - Báo lỗi 404 khi sản phẩm không tồn tại trong giỏ | Whitebox (Path Coverage) | `DELETE /api/cart/delete`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_999" }` | **404** | `{ message: "Product not in cart" }` | `it("TC-CART-20: Xóa sản phẩm - Báo lỗi 404 khi sản phẩm không tồn tại trong giỏ")` |
-| **`TC_CART_21`** | Xử lý ngoại lệ lỗi kết nối CSDL bị ngắt đột ngột (Ném lỗi 500) | Whitebox (Catch Block Coverage) | `POST /api/cart/add`<br>Headers: `Authorization: Bearer <validToken>`<br>Payload: `{ productId: "prod_123", quantity: 1 }` | **500** | `{ error: "INTERNAL_SERVER_ERROR" }` | `it("TC-CART-21: Xử lý ngoại lệ lỗi kết nối CSDL bị ngắt đột ngột (Ném lỗi 500)")` |                       |       **401**        | `{ error: "UNAUTHORIZED" }`                                                                                                | `it("TC-CART-09: [Unauthenticated] Không gửi Authorization Token -> Reject 401")`           |
+| Biến đầu vào / Điều kiện kiểm thử | Lớp hợp lệ (Valid Partitions) | Tag | Lớp không hợp lệ (Invalid Partitions) | Tag |
+| :--- | :--- | :---: | :--- | :---: |
+| **`userId`** (Xác thực tài khoản) | Token hợp lệ, trích xuất được `req.user._id` | **V1** | Khuyết Token hoặc không có `userId` trong request $\to$ 400 UNAUTHORIZED | **X1** |
+| **`productId`** (Định dạng & Sự tồn tại) | Chuỗi không rỗng, tồn tại trong collection `products` | **V2** | • Chuỗi rỗng `""` $\to$ 400 VALIDATION_ERROR<br>• Chuỗi định dạng hợp lệ nhưng **không tồn tại** trong CSDL $\to$ 404 Product not found | **X2**<br><br>**X3** |
+| **`quantity` (Thêm vào giỏ - Add)** | Số nguyên trong khoảng $[1, 99]$ ($1 \le quantity \le 99$) | **V3** | • Số nguyên $\le 0$ (vd: $0, -1, -5$) $\to$ 400<br>• Số nguyên vượt ngưỡng $> 99$ (vd: $100, 150$) $\to$ 400<br>• Số thực / thập phân lẻ (vd: $1.5, 2.8$) $\to$ 400<br>• Sai kiểu dữ liệu (chuỗi `"five"`, boolean, null) $\to$ 400 | **X4**<br>**X5**<br>**X6**<br>**X7** |
+| **`quantity` (Cập nhật - Update)** | • Số nguyên dương $[1, 99]$ (cập nhật số lượng mới)<br>• Số nguyên $0$ (kích hoạt xóa item khỏi giỏ) | **V4**<br><br>**V5** | • Số nguyên âm $< 0$ (vd: $-1$) $\to$ 400<br>• Số nguyên vượt ngưỡng $> 99$ $\to$ 400 | **X8**<br><br>**X9** |
+| **Sự tồn tại của Giỏ hàng trong CSDL** | • Đã tồn tại bản ghi giỏ hàng của user trong CSDL<br>• Chưa tồn tại giỏ hàng (lấy giỏ trả về rỗng; thêm giỏ kích hoạt `insertOne`) | **V6**<br><br>**V7** | Thực hiện Update hoặc Delete khi giỏ hàng chưa từng tồn tại $\to$ 404 Cart not found | **X10** |
+| **Sự tồn tại của Item trong Giỏ hàng** | • Sản phẩm đã có trong giỏ (`index >= 0` $\to$ cộng dồn/sửa/xóa)<br>• Sản phẩm chưa có trong giỏ (`index < 0` $\to$ push item mới) | **V8**<br><br>**V9** | Thực hiện Update hoặc Delete khi sản phẩm không có trong giỏ $\to$ 404 Product not in cart | **X11** |
+| **Giá tiền sản phẩm (`price`)** | Server độc quyền truy vấn `price` từ MongoDB | **V10** | Client gửi kèm thuộc tính `price` giả mạo trong payload $\to$ Bị Zod loại bỏ, Server bỏ qua hoàn toàn | **X12** |
 
 ---
 
-## 🟢 PHẦN 2: PHÂN TÍCH ĐỘ BAO PHỦ VÀ SỐ LƯỢNG TEST CASE TỐI ƯU
+### 3. Phân tích giá trị biên (Boundary Value Analysis - BVA)
 
-### 1. Phân tích Đồ thị Dòng điều khiển (Control Flow Graph - CFG) & Basis Paths
+Áp dụng kỹ thuật **Standard Boundary Value Analysis** để xác định các giá trị kiểm thử trọng yếu nằm tại ranh giới miền hợp lệ cho biến số lượng sản phẩm `quantity` và mã `productId`.
 
-Áp dụng phương pháp kiểm thử cấu trúc dòng điều khiển (White-box Control Flow Testing) từ giáo trình Chương 4 vào các hàm của [`cart.controller.ts`](file:///d:/admin/e-commerce-web/be/src/controllers/cart.controller.ts).
+Với mỗi biến có miền giá trị hợp lệ:
+$$[min, max]$$
+Xác định 5 điểm giá trị biên tiêu chuẩn:
 
-#### A. Đồ thị CFG cho hàm `addToCart`
+- `min`: Giá trị nhỏ nhất hợp lệ.
+- `min+`: Giá trị ngay trên giá trị nhỏ nhất.
+- `nominal`: Giá trị đại diện nằm giữa miền hợp lệ.
+- `max-`: Giá trị ngay dưới giá trị lớn nhất.
+- `max`: Giá trị lớn nhất hợp lệ.
 
-Xem xét luồng thực thi hàm `addToCart` (Dòng 71 - 140):
+#### Bảng 1.1: Phân tích giá trị biên tiêu chuẩn (Standard BVA)
+
+| Biến đầu vào / Thuộc tính kiểm thử | min | min+ | nominal | max- | max | Tag biên |
+| :--- | --: | ---: | ------: | ---: | --: | :--- |
+| **`quantity` (Thêm vào giỏ - Add)** | 1 | 2 | 50 | 98 | 99 | **B1, B2, B3, B4, B5** |
+| **`quantity` (Cập nhật - Update)** | 0 | 1 | 50 | 98 | 99 | **B6, B7, B8, B9, B10** |
+| **Độ dài chuỗi `productId`** | 1 | 2 | 24 | - | - | **B11, B12, B13** |
+
+#### Gợi ý chọn giá trị danh định (Nominal):
+
+| Biến kiểm thử | Miền hợp lệ | Giá trị nominal đại diện | Ghi chú payload mẫu |
+| :--- | :---: | :---: | :--- |
+| `quantity` (Add) | $[1, 99]$ | 50 | `{ productId: "...", quantity: 50 }` (Số lượng trung bình) |
+| `quantity` (Update) | $[0, 99]$ | 50 | `{ productId: "...", quantity: 50 }` (Số lượng cập nhật chuẩn) |
+| `productId` | Chuỗi $\ge 1$ ký tự | 24 ký tự | `"650c5d1f1f77bcf86cd79001"` (Chuẩn BSON ObjectId hex 24 ký tự) |
+
+#### Phân tích mở rộng giá trị ngoài biên (Robustness BVA - `min-` và `max+`):
+
+Trong môi trường API backend thương mại điện tử, các điểm ngoài biên (`min-`, `max+`) giúp ngăn ngừa sự cố âm tiền, gom hàng ảo và phá hoại cấu trúc mảng:
+
+| Biến kiểm thử | `min-` (Ngoài biên dưới) | Tag min- | `max+` (Ngoài biên trên) | Tag max+ | Kết quả kỳ vọng & Cơ chế phòng vệ |
+| :--- | :---: | :---: | :---: | :---: | :--- |
+| **`quantity` (Add)** | 0 hoặc số âm ($-1$) | **R1** | 100 | **R2** | `400 Bad Request` (Zod `min(1).max(99)` chặn tại Gateway) |
+| **`quantity` (Update)** | Số âm ($-1$) | **R3** | 100 | **R4** | `400 Bad Request` (Zod `min(0).max(99)` chặn tại Gateway) |
+| **Độ dài `productId`** | 0 (Chuỗi rỗng `""`) | **R5** | - | - | `400 Bad Request` (Zod `min(1)` chặn tại Gateway) |
+
+---
+
+### 4. Thiết kế các test case (Test Case Design)
+
+Dưới đây là bảng thiết kế test case chi tiết cho module Cart Management. Toàn bộ **21 test cases** được đánh mã định danh chuẩn hóa tăng dần đều từ **`TC-CART-01` đến `TC-CART-21`**, có phân loại rõ ràng **Kỹ thuật kiểm thử** (EP, BVA, Anti-tampering Security, Whitebox Branch, Whitebox Statement, Fault Injection) và chỉ rõ **Function / Controller Method** mục tiêu được kiểm thử, ánh xạ chính xác **1:1** với mã nguồn kiểm thử tự động đạt **100% Pass (21/21 tests)** trong [`cart.test.ts`](file:///d:/admin/e-commerce-web/be/src/tests/cart.test.ts).
+
+#### Bảng ánh xạ tổng quan Function kiểm thử:
+
+| Nhóm Function mục tiêu | Chức năng nghiệp vụ | Danh sách Test Case tương ứng |
+| :--- | :--- | :--- |
+| **`getCart`** | Truy vấn giỏ hàng cá nhân (hỗ trợ trả về giỏ rỗng khi chưa có dữ liệu) | **TC-CART-01**, **TC-CART-02**, **TC-CART-03**, **TC-CART-04** |
+| **`addToCart`** | Thêm sản phẩm, cộng dồn số lượng, push item mới, chống sửa giá | **TC-CART-05**, **TC-CART-06**, **TC-CART-07**, **TC-CART-08**, **TC-CART-09**, **TC-CART-10**, **TC-CART-11**, **TC-CART-12** |
+| **`updateCart`** | Cập nhật số lượng sản phẩm & tự động xóa item khi quantity = 0 | **TC-CART-13**, **TC-CART-14**, **TC-CART-15**, **TC-CART-16** |
+| **`deleteCart`** | Xóa sản phẩm khỏi giỏ hàng và tính lại tổng tiền giỏ hàng | **TC-CART-17**, **TC-CART-18**, **TC-CART-19** |
+| **`cartSchema (Zod BVA)`** | Kiểm thử giá trị biên và cấu trúc schema tại tầng validation | **TC-CART-20**, **TC-CART-21** |
+
+---
+
+#### Bảng chi tiết thiết kế 21 Test Cases:
+
+| STT | Mã Test Case | Function kiểm thử | Tên Test Case (Mục tiêu kiểm thử) | Kỹ thuật kiểm thử | Endpoint & Dữ liệu đầu vào (Input Payload / Setup) | Kết quả mong đợi (Expected Outcome) | Tag bao phủ | Test Function tương ứng trong `cart.test.ts` |
+| :-: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **TC-CART-01** | `getCart` | [Unauthorized] Trả về 400 khi request không có authenticated user | EP (Auth Guard) | `GET /api/cart`<br>User: `undefined` (không có token) | **Status 400 Bad Request**<br>Body: `{ error: "UNAUTHORIZED" }` | **X1** | `it("TC-CART-01: [Unauthorized] Returns 400 when request has no authenticated user")` |
+| 2 | **TC-CART-02** | `getCart` | [Empty Cart] Trả về cấu trúc giỏ rỗng mặc định khi user chưa có giỏ trong DB | EP (State Missing) | `GET /api/cart`<br>User: Authenticated<br>Mock: `cartCol.findOne` trả về `null` | **Status 200 OK**<br>Body: `{ success: true, data: { products: [], totalPrice: 0 } }` | **V7** | `it("TC-CART-02: [Empty Cart] Returns default empty cart structure when no cart document exists")` |
+| 3 | **TC-CART-03** | `getCart` | [Valid Cart] Trả về dữ liệu giỏ hàng đang hoạt động (loại bỏ CSDL `_id`) | EP (Valid Query) | `GET /api/cart`<br>User: Authenticated<br>Mock: Giỏ có sẵn 1 sản phẩm `quantity: 2`, `totalPrice: 1,000,000` | **Status 200 OK**<br>Body: `{ success: true, data: { userId, products, totalPrice } }` | **V1, V6** | `it("TC-CART-03: [Valid Cart] Returns active cart data excluding database _id")` |
+| 4 | **TC-CART-04** | `getCart` | [DB Error 500] Báo lỗi 500 khi thao tác truy vấn CSDL ném ngoại lệ | Fault Injection (Whitebox) | `GET /api/cart`<br>User: Authenticated<br>Mock: `getCollection` throw `new Error("db")` | **Status 500 Internal Server Error**<br>Body: `{ error: "INTERNAL_SERVER_ERROR" }` | **Fault Injection** | `it("TC-CART-04: [DB Error 500] Throws 500 when database collection query fails")` |
+| 5 | **TC-CART-05** | `addToCart` | [Unauthorized] Từ chối thêm sản phẩm khi người dùng chưa đăng nhập | EP (Auth Guard) | `POST /api/cart/add`<br>User: `undefined`<br>Payload: `{ productId, quantity: 1 }` | **Status 400 Bad Request**<br>Body: `{ error: "UNAUTHORIZED" }` | **X1** | `it("TC-CART-05: [Unauthorized] Reject adding item when unauthenticated")` |
+| 6 | **TC-CART-06** | `addToCart` | [Missing Fields] Từ chối yêu cầu khi thiếu productId hoặc quantity | EP (Input Guard) | `POST /api/cart/add`<br>User: Authenticated<br>Payload: `{ productId }` (Khuyết trường `quantity`) | **Status 400 Bad Request**<br>Body: `{ error: "Missing productId or quantity" }` | **X2, X7** | `it("TC-CART-06: [Missing Fields] Reject request missing productId or quantity")` |
+| 7 | **TC-CART-07** | `addToCart` | [Product Not Found] Báo lỗi 404 khi productId không tồn tại trong CSDL | EP (Resource Missing) | `POST /api/cart/add`<br>User: Authenticated<br>Mock: `productCol.findOne` trả về `null` | **Status 404 Not Found**<br>Body: `{ error: "Product not found" }` | **X3** | `it("TC-CART-07: [Product Not Found] Return 404 when product ID does not exist in DB")` |
+| 8 | **TC-CART-08** | `addToCart` | [New Cart & Anti-tampering] Tạo mới giỏ hàng và sử dụng giá CSDL (chống sửa giá) | Security & EP (Anti-tampering) | `POST /api/cart/add`<br>Payload: `{ productId, quantity: 2, price: 1 }` giả mạo<br>DB Price gốc: `500,000` | **Status 200 OK**<br>DB Verify: `insertOne` nhận `totalPrice: 1,000,000`, bỏ qua giá 1 đ | **V2, V3, V7, V10, X12** | `it("TC-CART-08: [New Cart] Create brand new cart document using current DB price")` |
+| 9 | **TC-CART-09** | `addToCart` | [Update Quantity] Cộng dồn số lượng khi sản phẩm đã có sẵn trong giỏ | Whitebox (Branch `index >= 0`) | `POST /api/cart/add`<br>Giỏ hiện tại: Sản phẩm đã có `quantity: 2`<br>Payload: `{ productId, quantity: 3 }` | **Status 200 OK**<br>DB Verify: `updateOne` với `quantity: 5` và `totalPrice: 2,500,000` | **V8, Branch index>=0** | `it("TC-CART-09: [Update Quantity] Add quantity to existing item in cart and recalculate total")` |
+| 10 | **TC-CART-10** | `addToCart` | [Add New Item] Push thêm sản phẩm mới vào mảng sản phẩm của giỏ đã có | Whitebox (Branch `index < 0`) | `POST /api/cart/add`<br>Giỏ hiện tại: Đã có item `"other"`<br>Payload: Thêm `{ productId, quantity: 1 }` | **Status 200 OK**<br>DB Verify: Giỏ chứa 2 items, `totalPrice: 500,100` | **V9, Branch index<0** | `it("TC-CART-10: [Add New Item] Append distinct product to existing cart array")` |
+| 11 | **TC-CART-11** | `addToCart` | [DB Error 500] Báo lỗi 500 khi hàm tính lại tiền không tìm thấy sản phẩm | Fault Injection (Whitebox) | `POST /api/cart/add`<br>Mock: `productCol.find` trả về mảng rỗng `[]` khi tính lại tiền | **Status 500 Internal Server Error**<br>Body: `{ error: "INTERNAL_SERVER_ERROR" }` | **Fault Injection** | `it("TC-CART-11: [DB Error 500] Throw 500 when product lookup fails during calculation")` |
+| 12 | **TC-CART-12** | `addToCart` | [DB Exception 500] Báo lỗi 500 khi kết nối CSDL bị ngoại lệ đột ngột | Fault Injection (Whitebox) | `POST /api/cart/add`<br>Mock: `productCollection.getCollection` throw `new Error("db")` | **Status 500 Internal Server Error**<br>Body: `{ error: "INTERNAL_SERVER_ERROR" }` | **Fault Injection** | `it("TC-CART-12: [DB Exception 500] Throw 500 on database connection exception")` |
+| 13 | **TC-CART-13** | `updateCart` | [Validation & Missing] Xử lý lỗi unauthenticated, thiếu giỏ hàng và thiếu sản phẩm | EP (Guard Validation) | `PUT /api/cart/update`<br>3 kịch bản: (1) Unauthenticated; (2) `cart === null`; (3) Sản phẩm không có trong giỏ | (1) $\to$ **400 UNAUTHORIZED**<br>(2) $\to$ **404 Cart not found**<br>(3) $\to$ **404 Product not found in cart** | **X1, X10, X11** | `it("TC-CART-13: [Validation & Missing] Handle unauthenticated, missing cart, and missing item")` |
+| 14 | **TC-CART-14** | `updateCart` | [Remove Item] Tự động xóa sản phẩm khỏi giỏ khi cập nhật quantity = 0 | EP / State (`quantity = 0`) | `PUT /api/cart/update`<br>Payload: `{ productId, quantity: 0 }`<br>Giỏ hiện tại: Có 1 sản phẩm | **Status 200 OK**<br>Body: `products: []`, `totalPrice: 0`<br>Kích hoạt `cart.products.splice(index, 1)` | **V5, B6, Branch quantity=0** | `it("TC-CART-14: [Remove Item] Remove product item completely when quantity updated to 0")` |
+| 15 | **TC-CART-15** | `updateCart` | [Valid Update] Cập nhật số lượng mới hợp lệ (> 0) và tính lại tổng tiền | EP (Positive Update) | `PUT /api/cart/update`<br>Payload: `{ productId, quantity: 4 }`<br>DB price: `500,000` | **Status 200 OK**<br>Body: `products[0].quantity = 4`, `totalPrice: 2,000,000` | **V4, V8, B3** | `it("TC-CART-15: [Valid Update] Update item quantity to positive value and recalculate total")` |
+| 16 | **TC-CART-16** | `updateCart` | [DB Error 500] Báo lỗi 500 khi câu truy vấn cập nhật giỏ ném ngoại lệ | Fault Injection (Whitebox) | `PUT /api/cart/update`<br>Mock: `cartCollection.getCollection` throw `new Error("db")` | **Status 500 Internal Server Error**<br>Body: `{ error: "INTERNAL_SERVER_ERROR" }` | **Fault Injection** | `it("TC-CART-16: [DB Error 500] Return 500 error when update query fails")` |
+| 17 | **TC-CART-17** | `deleteCart` | [Validation] Từ chối xóa khi unauthenticated, thiếu giỏ hoặc sản phẩm không có | EP (Guard Validation) | `DELETE /api/cart/delete`<br>3 kịch bản: (1) Unauthenticated; (2) Giỏ rỗng/null; (3) Item không có trong giỏ | (1) $\to$ **400 UNAUTHORIZED**<br>(2) $\to$ **404 Cart not found**<br>(3) $\to$ **404 Product not in cart** | **X1, X10, X11** | `it("TC-CART-17: [Validation] Reject unauthenticated, missing cart or item deletion")` |
+| 18 | **TC-CART-18** | `deleteCart` | [Delete Success] Xóa sản phẩm mục tiêu thành công và tính lại tổng tiền | EP (CRUD Delete) | `DELETE /api/cart/delete`<br>Payload: `{ productId }`<br>Giỏ hiện tại: 2 sản phẩm (mục tiêu và `"other"`) | **Status 200 OK**<br>Body: Chỉ còn sản phẩm `"other"`, `totalPrice: 100` | **V2, V6, V8** | `it("TC-CART-18: [Delete Success] Delete target product and recalculate cart total")` |
+| 19 | **TC-CART-19** | `deleteCart` | [DB Error 500] Báo lỗi 500 khi lệnh xóa trong CSDL ném ngoại lệ | Fault Injection (Whitebox) | `DELETE /api/cart/delete`<br>Mock: `cartCollection.getCollection` throw `new Error("db")` | **Status 500 Internal Server Error**<br>Body: `{ error: "INTERNAL_SERVER_ERROR" }` | **Fault Injection** | `it("TC-CART-19: [DB Error 500] Return 500 when deletion database call throws exception")` |
+| 20 | **TC-CART-20** | `cartSchema (Zod BVA)` | [Valid Schemas] Chấp nhận các giá trị biên hợp lệ (quantity = 1, 99 khi Add; 0 khi Update) | BVA (Valid Boundaries) | Parse `addToCartSchema` với `q = 1`, `q = 99`; parse `updateCartSchema` với `q = 0` | **Validation Passed**<br>Dữ liệu hợp lệ, không ném ngoại lệ | **V3, V4, V5, B1, B5, B6** | `it("TC-CART-20: [Valid Schemas] Accept valid add and update quantities")` |
+| 21 | **TC-CART-21** | `cartSchema (Zod BVA)` | [Boundary Validation] Từ chối các giá trị ngoài biên, số thực và productId rỗng | BVA (Negative Boundaries) | Parse `addToCartSchema` với `q = 0`, `q = 100`, `q = 1.5`; `updateCartSchema` với `q = -1`; `deleteCartItemSchema` với `productId = ""` | **Validation Throws Exception**<br>Chặn đứng dữ liệu sai phạm ngay tại Schema Gateway | **X2, X4, X5, X6, X8, R1, R2, R3, R5** | `it("TC-CART-21: [Boundary Validation] Reject invalid quantity boundaries and product ids")` |
+
+---
+
+## 🟢 PHẦN 2: PHÂN TÍCH ĐỒ THỊ DÒNG ĐIỀU KHIỂN & SỐ LƯỢNG TEST CASE TỐI ƯU
+
+### 2.1. Đồ thị dòng điều khiển (CFG) & Basis Paths cho hàm `addToCart`
+
+Xem xét luồng thực thi hàm `addToCart` (Dòng 71 - 140 trong `cart.controller.ts`):
 
 - **Node 0**: Bắt đầu block `try`, đọc `userId = req.user?._id`.
 - **Node 1** (Predicate): `if (!userId)` $\to$ **Node 2**: Return 400 `UNAUTHORIZED`.
@@ -199,8 +247,7 @@ flowchart TD
 
 - **Tính toán độ phức tạp Cyclomatic $V(G)$ cho `addToCart`**:
   - Số nút điều kiện (Predicate nodes): $P = 6$ (Node 1, Node 4, Node 7, Node 10, Node 13, và Node ngoại lệ Try/Catch).
-  - Theo công thức giáo trình Chương 4 ($V(G) = P + 1$):
-    $$V(G) = 6 + 1 = 7$$
+  - Độ phức tạp Cyclomatic: $V(G) = P + 1 = 6 + 1 = 7$.
   - **Tập các đường đi cơ sở (Basis Paths)**:
     - **Path 1**: $0 \to 1 \to 2$ (Thiếu token user $\to$ 400).
     - **Path 2**: $0 \to 1 \to 3 \to 4 \to 5$ (Thiếu body params $\to$ 400).
@@ -212,9 +259,9 @@ flowchart TD
 
 ---
 
-#### B. Đồ thị CFG cho hàm `updateCart`
+### 2.2. Đồ thị dòng điều khiển (CFG) cho hàm `updateCart`
 
-Xem xét luồng thực thi hàm `updateCart` (Dòng 142 - 177):
+Xem xét luồng thực thi hàm `updateCart` (Dòng 142 - 177 trong `cart.controller.ts`):
 
 - **Node 0**: Bắt đầu `try`, đọc `userId`, `productId`, `quantity`.
 - **Node 1** (Predicate): `if (!userId)` $\to$ Return 400 `UNAUTHORIZED`.
@@ -226,107 +273,99 @@ Xem xét luồng thực thi hàm `updateCart` (Dòng 142 - 177):
   - **Nhánh True (Node 7)**: `cart.products.splice(index, 1)` (**Xóa item khỏi giỏ hàng**).
   - **Nhánh False (Node 8)**: `cart.products[index].quantity = quantity` (**Cập nhật số lượng mới**).
 - **Node 9**: `await recalculateCartTotal(cart)`, `cartCol.updateOne`, return 200 JSON.
-- **Node 10**: `catch (error)` $\to$ 500.
+- **Node 10**: `catch (error)` $\to$ 500 `INTERNAL_SERVER_ERROR`.
 
 - **Độ phức tạp Cyclomatic $V(G)$ cho `updateCart`**:
   $$V(G) = P + 1 = 5 + 1 = 6$$
-###  Ma trận Bao phủ Cấu trúc (Statement & Branch Coverage Metrics)
+
+---
+
+### 2.3. Ma trận Bao phủ Cấu trúc Đạt được (Code Coverage Metrics)
+
+Dưới đây là kết quả đo lường độ phủ thực tế thu được từ Jest Runner và công cụ Istanbul Coverage:
 
 | Module / Component | Statement Coverage | Branch Coverage | Function Coverage | Line Coverage | Trạng thái Pass Rate |
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **`cart.controller.ts`** | **100%** | **100%** | **100%** | **100%** | **100% (21/21 Pass)** |
 | **`cart.schema.ts`** | **100%** | **100%** | **100%** | **100%** | **100% (21/21 Pass)** |
----
-
-### 2. Số lượng Test Case tối ưu cho 100% Statement Coverage
-
-#### A. Trả lời cụ thể
-
-Để đạt **100% Statement Coverage** cho toàn bộ 4 hàm xử lý (`getCart`, `addToCart`, `updateCart`, `deleteCart`) và hàm phụ trợ `recalculateCartTotal` trong [`cart.controller.ts`](file:///d:/admin/e-commerce-web/be/src/controllers/cart.controller.ts), số lượng test case tối thiểu bắt buộc phải chạy là **14 Test Cases**.
-
-Hiện tại, file [`cart.test.ts`](file:///d:/admin/e-commerce-web/be/src/tests/cart.test.ts) đang tập trung kiểm thử endpoint `POST /api/cart/add`, đạt **25.00% Statement Coverage** trên `cart.controller.ts` (các dòng chưa được phủ: 12-47, 51-67, 78, 87, 113-132, 137-138, 143-175, 180-211).
-
-#### B. Danh sách 14 Test Cases bắt buộc để bao phủ 100% dòng lệnh (Statements)
-
-| STT | Test Case ID          | Hàm mục tiêu | Mục đích bao phủ Statement                                         | Dòng lệnh thực thi trong `cart.controller.ts`                   |
-| :-: | :-------------------- | :----------- | :----------------------------------------------------------------- | :-------------------------------------------------------------- |
-|  1  | **TC_CART_01**        | `addToCart`  | Phủ luồng tạo mới giỏ hàng khi user chưa có giỏ (`!cart`)          | L72-76, L80-85, L90-111, L135                                   |
-|  2  | **TC_CART_ADD_01**    | `addToCart`  | Phủ luồng cộng dồn khi sản phẩm đã có sẵn trong giỏ (`index >= 0`) | L113-118, L129-133 (và kích hoạt L11-48 `recalculateCartTotal`) |
-|  3  | **TC_CART_ADD_02**    | `addToCart`  | Phủ luồng thêm sản phẩm thứ hai vào giỏ đã tồn tại (`index < 0`)   | L113-116, L120-127, L129-133                                    |
-|  4  | **TC_CART_ADD_03**    | `addToCart`  | Phủ câu lệnh trả về 404 khi `productId` không tồn tại trong CSDL   | L86-88 (`if (!product) return res.status(404)`)                 |
-|  5  | **TC_CART_GET_01**    | `getCart`    | Phủ luồng lấy giỏ hàng rỗng khi user chưa từng mua hàng            | L51-60 (`if (!cart) return { products: [], totalPrice: 0 }`)    |
-|  6  | **TC_CART_GET_02**    | `getCart`    | Phủ luồng lấy giỏ hàng đã có dữ liệu sản phẩm                      | L62-64 (Bóc tách `_id`, trả về `cartData`)                      |
-|  7  | **TC_CART_UPD_01**    | `updateCart` | Phủ luồng cập nhật số lượng hợp lệ ($> 0$) cho sản phẩm trong giỏ  | L143-157, L163-172 (`cart.products[index].quantity = quantity`) |
-|  8  | **TC_CART_UPD_02**    | `updateCart` | Phủ câu lệnh tự động xóa item khi `quantity === 0`                 | L161-162 (`cart.products.splice(index, 1)`)                     |
-|  9  | **TC_CART_UPD_03**    | `updateCart` | Phủ câu lệnh trả về 404 khi giỏ hàng không tồn tại trong DB        | L151-153 (`if (!cart) return res.status(404)`)                  |
-| 10  | **TC_CART_UPD_04**    | `updateCart` | Phủ câu lệnh trả về 404 khi sản phẩm không có trong giỏ hàng       | L158-159 (`if (index < 0) return res.status(404)`)              |
-| 11  | **TC_CART_DEL_01**    | `deleteCart` | Phủ luồng xóa sản phẩm thành công khỏi giỏ qua endpoint DELETE     | L180-194, L198-208 (`splice`, `reduce` tính lại tiền)           |
-| 12  | **TC_CART_DEL_02**    | `deleteCart` | Phủ nhánh 404 khi sản phẩm cần xóa không tồn tại trong giỏ         | L195-196 (`if (index < 0) return res.status(404)`)              |
-| 13  | **TC_CART_AUTH_ERR**  | Middleware   | Phủ câu lệnh từ chối khi không có `userId` trong Token             | L53, L74, L145, L183 (`if (!userId) return 400`)                |
-| 14  | **TC_CART_CATCH_ERR** | Exception    | Phủ toàn bộ các khối `catch (error)` ném 500 bằng Mock DB Reject   | L66-67, L137-138, L174-175, L210-211                            |
-
-> 📌 **Ghi chú của Test Architect**:  
-> Dòng 78 (`if (!productId || !quantity)`) trong hàm `addToCart` là **Dead Code (Mã chết phòng thủ)**. Bởi vì route `/api/cart/add` sử dụng Zod schema `validate({ body: addToCartSchema })`, mọi request thiếu `productId` hoặc `quantity` đều bị chặn ngay tại middleware với lỗi 400 `VALIDATION_ERROR`, không bao giờ chạm tới dòng 78 của controller khi chạy qua HTTP pipeline.
 
 ---
 
-### 3. Số lượng Test Case tối ưu cho 100% Branch Coverage
+### 2.4. Số lượng Test Case định lượng cho 100% Statement Coverage
 
-#### A. Trả lời cụ thể
+**Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Statement Coverage?
 
-Để đạt **100% Branch Coverage (Decision Coverage)**, mọi cấu trúc điều kiện logic (`if/else`, `try/catch`, toán tử ba ngôi) phải được kích hoạt cả hai trạng thái `True` và `False`.
+**Trả lời:** Từ tổng số 21 Test Cases, ta lọc ra **Tập tối thiểu gồm 14 Test Cases** để bảo đảm mọi dòng lệnh trong `cart.controller.ts` được thực thi ít nhất một lần.
 
-- Số lượng test case tối ưu cần thiết: **12 Test Cases**.
-- Hiện tại trong `cart.test.ts`, Branch Coverage đạt **20.58%** (do chỉ mới phủ các nhánh của Zod Schema và luồng tạo giỏ mới của `addToCart`).
+**Bảng Danh sách 14 Test Cases bắt buộc phải chạy để phủ kín Statements:**
 
-#### B. Ma trận các nhánh điều kiện cốt lõi cần phủ 100%
-
-| STT | Vị trí điều kiện trong Code                    | Nhánh True (T)                                             | Nhánh False (F)                                  | Test Case ID kích hoạt nhánh True | Test Case ID kích hoạt nhánh False  |
-| :-: | :--------------------------------------------- | :--------------------------------------------------------- | :----------------------------------------------- | :-------------------------------- | :---------------------------------- |
-|  1  | `if (!product)` (`addToCart`: L86)             | Sản phẩm không có trong DB $\to$ Trả về 404                | Sản phẩm tồn tại $\to$ Đi tiếp vào xử lý giỏ     | **TC_CART_ADD_03**                | **TC_CART_01**                      |
-|  2  | `if (!cart)` (`addToCart`: L94)                | User chưa có giỏ $\to$ Khởi tạo giỏ mới (`insertOne`)      | User đã có giỏ $\to$ Xử lý cập nhật danh sách    | **TC_CART_01**                    | **TC_CART_ADD_01**                  |
-|  3  | `if (index >= 0)` (`addToCart`: L117)          | Sản phẩm đã có trong giỏ $\to$ Cộng dồn `quantity`         | Sản phẩm chưa có $\to$ Push thêm item mới        | **TC_CART_ADD_01**                | **TC_CART_ADD_02**                  |
-|  4  | `if (!cart)` (`getCart`: L58)                  | Chưa có giỏ $\to$ Trả về `{ products: [], totalPrice: 0 }` | Đã có giỏ $\to$ Trả về data giỏ hàng             | **TC_CART_GET_01**                | **TC_CART_GET_02**                  |
-|  5  | `if (!cart)` (`updateCart`: L152)              | Giỏ hàng không tồn tại $\to$ Báo lỗi 404                   | Giỏ hàng tồn tại $\to$ Tìm kiếm vị trí sản phẩm  | **TC_CART_UPD_03**                | **TC_CART_UPD_01**                  |
-|  6  | `if (index < 0)` (`updateCart`: L158)          | Sản phẩm không có trong giỏ $\to$ Báo lỗi 404              | Sản phẩm có trong giỏ $\to$ Cho phép cập nhật    | **TC_CART_UPD_04**                | **TC_CART_UPD_01**                  |
-|  7  | **`if (quantity === 0)`** (`updateCart`: L161) | **`quantity == 0` $\to$ Xóa item (`splice`)**              | **`quantity > 0` $\to$ Gán `quantity` mới**      | **TC_CART_UPD_02** _(Xóa)_        | **TC_CART_UPD_01** _(Sửa số lượng)_ |
-|  8  | `if (index < 0)` (`deleteCart`: L195)          | Sản phẩm không tồn tại trong giỏ $\to$ 404                 | Tìm thấy sản phẩm $\to$ Xóa khỏi mảng `products` | **TC_CART_DEL_02**                | **TC_CART_DEL_01**                  |
-|  9  | `try { ... } catch (error)`                    | Ném lỗi kết nối CSDL $\to$ Báo lỗi 500                     | Luồng chạy thông suốt không lỗi                  | **TC_CART_CATCH_ERR**             | **TC_CART_01**                      |
-
----
-
-## 🟢 PHẦN 3: ĐÁNH GIÁ ĐỘ PHÙ HỢP CỦA PHƯƠNG PHÁP (METHODOLOGY EVALUATION)
-
-### 1. Đánh giá Điểm mạnh của Phương pháp Blackbox (EP / BVA) đối với Module Cart
-
-1. **Bảo vệ Gateway và Chặn đứng dữ liệu sai lệch ngay từ vòng ngoài**:
-   - Đối với tính năng giỏ hàng, việc nhập số lượng âm ($-1$), số 0 hoặc số thực ($1.5$) có thể gây ra các lỗi nghiêm trọng về logic tài chính (vd: số lượng âm có thể làm tổng tiền bị trừ đi, biến đơn hàng thành miễn phí).
-   - Áp dụng BVA & EP đã chặn đứng các payload bất thường này tại tầng `validate.ts` mà không làm tiêu tốn tài nguyên kết nối CSDL MongoDB.
-2. **Ngăn chặn lỗi tràn giỏ hàng (Inventory Hoarding & Buffer Limits)**:
-   - Ngưỡng BVA $\text{Max} = 99$ và $\text{Max}^+ = 100$ được thiết kế chuẩn xác để ngăn người dùng gom hàng ảo, đồng thời bảo vệ giới hạn hiển thị UI trên các thiết bị di động.
-3. **Độc lập với cấu trúc dữ liệu nội bộ**:
-   - Các kịch bản Blackbox tập trung vào hành vi mong đợi của người dùng (thêm được hàng, nhận mã lỗi khi số lượng sai), giúp bộ test không bị gãy khi lập trình viên tái cấu trúc (refactor) mảng `products` hoặc cách thức lưu trữ trong MongoDB.
+| STT | Test Case ID | Hàm mục tiêu | Mục đích bao phủ Statement | Dòng lệnh thực thi trong `cart.controller.ts` |
+| :-: | :--- | :--- | :--- | :--- |
+| **1** | **TC-CART-01, 05, 13, 17** | `All Handlers` | Phủ các guard clauses kiểm tra `!userId` trả về 400 | L53, L74, L145, L183 (`if (!userId) return 400`) |
+| **2** | **TC-CART-02** | `getCart` | Phủ nhánh trả về giỏ rỗng mặc định khi `!cart` | L58-60 (`return res.json({ products: [], totalPrice: 0 })`) |
+| **3** | **TC-CART-03** | `getCart` | Phủ bóc tách object `{ _id, ...cartData }` và trả về data giỏ | L62-64 |
+| **4** | **TC-CART-06** | `addToCart` | Phủ khối bảo vệ missing body parameters | L77-79 (`if (!productId \|\| !quantity) return 400`) |
+| **5** | **TC-CART-07** | `addToCart` | Phủ kiểm tra `!product` trả về 404 | L86-88 (`if (!product) return 404`) |
+| **6** | **TC-CART-08** | `addToCart` | Phủ luồng tạo mới giỏ hàng `insertOne` và tính giá gốc CSDL | L94-111, L135 |
+| **7** | **TC-CART-09** | `addToCart` | Phủ cộng dồn số lượng `index >= 0` và hàm `recalculateCartTotal` | L117-118, L129-133 (kích hoạt L11-48) |
+| **8** | **TC-CART-10** | `addToCart` | Phủ thêm item mới `index < 0` vào mảng giỏ hàng đã có | L120-127, L129-133 |
+| **9** | **TC-CART-13** | `updateCart` | Phủ nhánh `!cart` và `index < 0` trả về lỗi 404 | L152, L158 |
+| **10** | **TC-CART-14** | `updateCart` | Phủ câu lệnh tự động xóa item khi `quantity === 0` | L161-162 (`cart.products.splice(index, 1)`) |
+| **11** | **TC-CART-15** | `updateCart` | Phủ gán số lượng mới khi `quantity > 0` và gọi `updateOne` | L164-171 |
+| **12** | **TC-CART-17** | `deleteCart` | Phủ nhánh `!cart` và `index < 0` trả về 404 khi xóa | L190, L195 |
+| **13** | **TC-CART-18** | `deleteCart` | Phủ thao tác `splice` và `reduce` tính lại tổng tiền giỏ | L198-208 |
+| **14** | **TC-CART-04, 11, 12, 16, 19** | `All Handlers` | Phủ toàn bộ các khối `catch (error)` ném 500 | L66-67, L137-138, L174-175, L210-211 |
 
 ---
 
-### 2. Các "Điểm mù" (Edge Cases) của Blackbox và Cách Whitebox (Jest Mocking) giải quyết
+### 2.5. Số lượng Test Case định lượng cho 100% Branch Coverage (Độ phủ nhánh)
 
-Mặc dù Blackbox kiểm tra rất tốt lớp giao tiếp bên ngoài, Module Cart có những logic nội tại mà Blackbox thuần túy **hoàn toàn bất lực**:
+**Câu hỏi:** Cần chạy bao nhiêu test case (và là những test case nào) để đạt 100% Branch Coverage?
+
+**Trả lời:** Branch Coverage đòi hỏi mọi cấu trúc rẽ nhánh (`if/else`, toán tử ba ngôi, `try/catch`) phải kích hoạt đủ 2 trạng thái `True` và `False`. Tổng cộng cần **12 Test Cases cốt lõi**.
+
+**Bảng Ma trận các nhánh điều kiện bảo đảm 100% Branch Coverage:**
+
+| STT | Vị trí điều kiện trong Code | Nhánh True (T) | Nhánh False (F) | Test Case phủ nhánh True | Test Case phủ nhánh False |
+| :-: | :--- | :--- | :--- | :--- | :--- |
+| **1** | `if (!userId)` (`All Handlers`) | Khuyết token $\to$ Báo 400 | Có token $\to$ Đi tiếp | **TC-CART-01, 05** | **TC-CART-02, 08** |
+| **2** | `if (!product)` (`addToCart`: L86) | Sản phẩm không có trong DB $\to$ Báo 404 | Sản phẩm tồn tại $\to$ Xử lý giỏ | **TC-CART-07** | **TC-CART-08** |
+| **3** | `if (!cart)` (`addToCart`: L94) | User chưa có giỏ $\to$ Khởi tạo giỏ mới (`insertOne`) | User đã có giỏ $\to$ Xử lý danh sách | **TC-CART-08** | **TC-CART-09** |
+| **4** | `if (index >= 0)` (`addToCart`: L117) | Sản phẩm đã có trong giỏ $\to$ Cộng dồn `quantity` | Sản phẩm chưa có $\to$ Push thêm item | **TC-CART-09** | **TC-CART-10** |
+| **5** | `if (!cart)` (`getCart`: L58) | Chưa có giỏ $\to$ Trả về `{ products: [], totalPrice: 0 }` | Đã có giỏ $\to$ Trả về data giỏ | **TC-CART-02** | **TC-CART-03** |
+| **6** | `if (!cart)` (`updateCart`: L152) | Giỏ hàng không tồn tại $\to$ Báo lỗi 404 | Giỏ hàng tồn tại $\to$ Tìm vị trí item | **TC-CART-13** | **TC-CART-15** |
+| **7** | `if (index < 0)` (`updateCart`: L158) | Sản phẩm không có trong giỏ $\to$ Báo lỗi 404 | Sản phẩm có trong giỏ $\to$ Cho sửa | **TC-CART-13** | **TC-CART-15** |
+| **8** | **`if (quantity === 0)`** (`updateCart`: L161) | **`quantity == 0` $\to$ Xóa item (`splice`)** | **`quantity > 0` $\to$ Gán `quantity` mới** | **TC-CART-14** _(Xóa)_ | **TC-CART-15** _(Sửa số lượng)_ |
+| **9** | `if (index < 0)` (`deleteCart`: L195) | Sản phẩm không có trong giỏ $\to$ Báo lỗi 404 | Tìm thấy sản phẩm $\to$ Xóa khỏi mảng | **TC-CART-17** | **TC-CART-18** |
+| **10** | `if (!product)` (`recalculateCartTotal`: L29) | Sản phẩm lookup rỗng $\to$ Ném Error 500 | Tìm thấy sản phẩm $\to$ Lấy giá CSDL | **TC-CART-11** | **TC-CART-09** |
+| **11** | `try { ... } catch (error)` | Ngoại lệ kết nối CSDL $\to$ Báo lỗi 500 | Luồng thực thi bình thường $\to$ 200 | **TC-CART-04, 12, 16, 19** | **TC-CART-03, 08, 15, 18** |
+
+---
+
+## 🟢 PHẦN 3: TƯ DUY ĐÁNH GIÁ PHƯƠNG PHÁP LUẬN (METHODOLOGY EVALUATION)
+
+_Mục tiêu: Đánh giá xem áp dụng phương pháp BVA/EP có tự động đảm bảo 100% độ phủ Statement/Branch hay không, và phân tích các điểm thừa/thiếu khi ánh xạ vào cấu trúc mã nguồn thực tế của Module Cart._
+
+### 3.1. Sự thật: BVA/EP có tự động đảm bảo 100% Coverage không?
+
+**Kết luận khẳng định: HOÀN TOÀN KHÔNG!**
+
+Phương pháp BVA/EP hoàn toàn dựa trên tư duy **Hộp Đen (Blackbox)** - nhìn vào tài liệu đặc tả (Specs) để thiết kế kịch bản. Khi đem bộ test case Blackbox ốp vào chạy trên Source Code của module Cart, độ phủ thường chỉ đạt khoảng **30% - 60%**. Lý do là phương pháp này gặp phải vấn đề **vừa Thừa lại vừa Thiếu** khi ánh xạ vào kiến trúc nội bộ của lập trình viên.
 
 ```mermaid
 graph LR
-    subgraph BlindSpots ["Điểm mù của Blackbox Testing"]
+    subgraph BlindSpots ["Điểm mù của Blackbox Testing (BVA/EP)"]
         B1["Không xác minh được Server có thực sự tự tính lại giá từ DB hay không"]
-        B2["Không thể ép trạng thái CSDL bị sập (Database Outage / 500)"]
-        B3["Khó giả lập trạng thái giỏ hàng có sẵn nhiều sản phẩm phức tạp"]
-        B4["Không phát hiện được mã chết (Dead Code) phòng thủ trong Controller"]
+        B2["Không thể giả lập sự cố CSDL sập đột ngột (Database Outage / 500)"]
+        B3["Khó kiểm tra nhánh xóa item khi quantity = 0 bên trong CSDL"]
+        B4["Bỏ sót nhánh cộng dồn (index >= 0) vs push item mới (index < 0)"]
     end
 
-    subgraph WhiteboxPower ["Giải pháp Whitebox Testing & Jest Mocking"]
-        W1["Spy DB calls: kiểm tra findOne lấy đúng giá DB và bỏ qua giá payload"]
-        W2["mockRejectedValue: ép Controller nhảy vào catch(error) kiểm thử 500"]
-        W3["mockResolvedValue: định hình sẵn Cart object với index >= 0 / < 0"]
-        W4["Coverage Metrics (Istanbul/Jest) chỉ ra dòng if unreachable"]
+    subgraph WhiteboxPower ["Giải pháp Whitebox Testing (Jest Mocking)"]
+        W1["Spy DB calls: assert findOne lấy đúng giá DB và bỏ qua giá payload (TC-CART-08)"]
+        W2["mockRejectedValue: ép Controller nhảy vào catch(error) kiểm thử 500 (TC-CART-04, 12)"]
+        W3["mockResolvedValue: định hình sẵn Cart object với index >= 0 / < 0 (TC-CART-09, 10)"]
+        W4["Assert mảng: kiểm tra splice giảm độ dài mảng về 0 (TC-CART-14)"]
     end
 
     B1 ==> W1
@@ -335,35 +374,37 @@ graph LR
     B4 ==> W4
 ```
 
-1. **Điểm mù 1: Xác thực cơ chế Anti-tampering Price (Kiểm tra nguồn gốc giá tiền)**
-   - _Vấn đề của Blackbox_: Khi gửi payload có `price = 10`, Blackbox nhận về HTTP `200`. Nhưng Blackbox không thể biết được trong CSDL giỏ hàng đang lưu giá 10 hay giá 500,000 VND trừ khi có thêm một bước truy vấn DB.
-   - _Cách Whitebox giải quyết_: Dùng Jest Mocking để kiểm tra xem `productCollection.findOne` có được gọi đúng ID và kết quả băm giá có được truyền vào `cart.totalPrice` hay không:
-     ```typescript
-     // TC-CART-08 trong cart.test.ts:
-     const forgedPayload = { productId: "prod_123", quantity: 2, price: 10 };
-     await request(app).post("/api/cart/add").set("Authorization", ...).send(forgedPayload);
-     // Whitebox assert kiểm tra hàm findOne của Product model được gọi
-     expect(mockProductCollection.findOne).toHaveBeenCalledWith({ _id: "prod_123" });
-     ```
-2. **Điểm mù 2: Trạng thái giỏ hàng nội tại (New Cart vs Existing Cart vs Item Exists)**
-   - _Vấn đề của Blackbox_: Để test nhánh "sản phẩm đã có trong giỏ hàng $\to$ cộng dồn số lượng", tester Blackbox phải gửi 2 request tuần tự. Nếu môi trường test dùng DB thật, việc dọn dẹp (clean up) sau mỗi test case rất chậm và dễ gây tình trạng test chạy chập chờn (flaky).
-   - _Cách Whitebox giải quyết_: Sử dụng Mocking `mockCartCollection.findOne.mockResolvedValueOnce({ products: [{ productId: "prod_123", quantity: 2 }] })`, cho phép kiểm thử lập tức nhánh `index >= 0` chỉ với 1 lần gọi hàm.
-3. **Điểm mù 3: Kích hoạt nhánh Xóa item khi `quantity === 0` trong `updateCart`**
-   - _Vấn đề của Blackbox_: Người dùng chỉ biết gọi API cập nhật, không biết rằng bên dưới code sử dụng `splice` để giải phóng bộ nhớ thay vì lưu trữ bản ghi `quantity: 0`.
-   - _Cách Whitebox giải quyết_: Viết test case truyền `quantity: 0`, mock giỏ hàng có sẵn 1 item và assert độ dài mảng `cart.products.length` giảm từ 1 về 0.
-4. **Điểm mù 4: Kiểm thử khả năng chịu lỗi (Fault Tolerance & 500 Internal Server Error)**
-   - _Cách Whitebox giải quyết_: Sử dụng `mockProductCollection.findOne.mockRejectedValue(new Error("MongoDB Connection Lost"))` để đưa Controller vào khối `catch (error)`, xác minh hệ thống luôn trả về JSON an toàn `{ error: "INTERNAL_SERVER_ERROR" }` thay vì làm sập tiến trình Node.js.
+### 3.2. Đánh giá "Cái THIẾU" của BVA/EP khi map sang Code
 
----
+Bộ BVA/EP được thiết kế dưới giả định "Hạ tầng lý tưởng" nên không thể kích hoạt được các logic phòng ngự (Defensive Programming) và các cấu trúc dữ liệu mảng nội tại:
 
-### 3. Kết luận của QA Lead về Độ sẵn sàng của Module Cart (Sign-off Recommendation)
+1. **Thiếu cơ chế xác thực nguồn giá (Anti-tampering Price Guard)**:
+   - Khi Client gửi payload có thuộc tính `price = 10` giả mạo, Blackbox chỉ nhận về HTTP `200 OK`. Nhưng Blackbox không thể khẳng định được trong CSDL giỏ hàng đang lưu giá `10` hay giá niêm yết `500,000 VND`.
+   - $\implies$ **Whitebox bù đắp**: Sử dụng Jest Mocking (**`TC-CART-08`**) để kiểm tra hàm `insertOne` nhận chính xác `totalPrice: 1,000,000` (giá từ DB) và bỏ qua hoàn toàn trường `price` của Client.
+2. **Thiếu nhánh Catch Block (Lỗi kết nối CSDL sập)**:
+   - Tài liệu đặc tả chức năng không bao giờ ghi yêu cầu: _"Rút dây cáp mạng MongoDB đột ngột để trả về 500"_. Do đó, các khối lệnh `catch (error)` sẽ mãi mãi là điểm mù nếu chỉ kiểm thử Blackbox.
+   - $\implies$ **Whitebox bù đắp**: Sử dụng kỹ thuật Fault Injection (**`TC-CART-04`**, **`TC-CART-11`**, **`TC-CART-12`**, **`TC-CART-16`**, **`TC-CART-19`**) ném `Error("db")` để kích hoạt 100% các khối catch.
+3. **Thiếu nhánh Chuyển đổi trạng thái xóa item khi `quantity === 0`**:
+   - Khi cập nhật số lượng về 0, Blackbox chỉ thấy HTTP `200`. Chỉ có Whitebox mới xác minh được bên trong CSDL hàm `splice` đã được gọi và mảng `products` đã được làm sạch rỗng (**`TC-CART-14`**).
+4. **Thiếu nhánh phân chia mảng `index >= 0` vs `index < 0`**:
+   - Việc cộng dồn vào phần tử có sẵn hay push phần tử mới là logic nội tại của hàm `addToCart`. Blackbox khó phân tách rạch ròi nếu không mock trạng thái bộ nhớ ban đầu (**`TC-CART-09`**, **`TC-CART-10`**).
 
-1. **Đánh giá chất lượng thực thi tự động hiện tại**:
-   - **Tỷ lệ Pass**: **9/9 Test Cases PASSED** ($100\%$ Pass Rate).
-   - **Tốc độ thực thi**: Cực nhanh (**~2.99 giây**) nhờ cô lập CSDL bằng Jest Mocking.
-   - **Bảo mật**: Cơ chế chống gian lận giá tiền (Anti-tampering Price Guard) và xác thực JWT hoạt động xuất sắc.
-2. **Kế hoạch hành động trước khi bàn giao (Next Action Items)**:
-   - **Mở rộng Test Suite**: Hiện tại test suite `cart.test.ts` mới chỉ tập trung vào endpoint `/api/cart/add`. Cần bổ sung ngay **5 test cases** cho các endpoint `/api/cart` (GET), `/api/cart/update` (PUT) và `/api/cart/delete` (DELETE) theo danh mục ở Phần 2 để đưa Statement Coverage của `cart.controller.ts` từ **$25.00\%$ lên $> 90\%$**.
-   - **Refactor mã nguồn**: Loại bỏ dòng kiểm tra `if (!productId || !quantity)` tại dòng 78 của `cart.controller.ts` để tối ưu hóa đồ thị điều khiển, loại bỏ Dead Code.
-3. **Kết luận nghiệm thu (Sign-off Verdict)**:  
-   Endpoint **`POST /api/cart/add`** và tầng **Validation Schema** đạt chuẩn **PRODUCTION-READY**. Toàn bộ module Cart sẽ được cấp chứng nhận nghiệm thu hoàn toàn ngay sau khi bổ sung các test cases cho `updateCart` và `deleteCart`.
+### 3.3. Đánh giá "Cái THỪA" của BVA/EP khi map sang Code
+
+Ngược lại, khi map sang cấu trúc mã nguồn, bộ test BVA/EP lại sinh ra sự **Thừa thãi (Redundant)** và trùng lặp (Overlap):
+
+1. **Hiện tượng Mã chết (Dead Code) do kiến trúc phân lớp**:
+   - Tại dòng 78 của `cart.controller.ts`, lập trình viên viết câu lệnh kiểm tra:
+     `if (!productId || !quantity) return res.status(400)`
+   - Tuy nhiên, route `/api/cart/add` đã được bảo vệ từ trước bởi Zod Schema middleware `validate({ body: addToCartSchema })`.
+   - **Hậu quả**: Mọi request thiếu `productId` hoặc `quantity` đều bị Zod chặn đứng ngay tại tầng Router Middleware. Khi request chạy qua HTTP pipeline, dòng 78 của controller trở thành **Mã chết không bao giờ chạm tới**. BVA/EP kiểm thử nhiều biến thể thiếu tham số sẽ trở nên thừa thãi nếu không nhận thức được cấu trúc phân lớp này.
+2. **Trùng lặp kiểm thử Validation giữa Schema và Controller**:
+   - Việc kiểm tra số lượng âm, số lượng vượt 99, hoặc chuỗi chữ đã được phủ hoàn toàn tại Schema Unit Test (**`TC-CART-20`**, **`TC-CART-21`**). Nếu ở tầng Controller tiếp tục lặp lại các kịch bản này thì độ phủ không tăng thêm nhưng chi phí chạy test suite tăng lên đáng kể.
+
+### 3.4. Tổng kết Triết lý Kiểm thử
+
+Qua việc thực nghiệm trên module Cart, có thể rút ra kết luận cốt lõi:
+
+1. **BVA/EP (Blackbox) là ĐIỀU KIỆN CẦN**: Đóng vai trò tấm khiên bảo vệ Gateway, chặn đứng dữ liệu sai phạm (số lượng âm, số lượng vượt 99, số thập phân) ngay từ vòng ngoài và bảo vệ an toàn cho hệ thống.
+2. **Structural Testing (Whitebox) là ĐIỀU KIỆN ĐỦ**: Đóng vai trò chiếc kính hiển vi soi vào các góc khuất của CSDL: kiểm soát cơ chế Anti-tampering price, xác minh thao tác mảng (`splice`, `push`, `reduce`), kích hoạt bẫy ngoại lệ kết nối MongoDB, và phát hiện mã chết (Dead Code).
+3. $\implies$ **Phương pháp toàn vẹn nhất**: Lấy **BVA/EP làm bộ khung định hình hành vi nghiệp vụ**, sau đó dùng **Whitebox lấp đầy cái thiếu (bảo mật giá, fault injection) và cắt tỉa cái thừa (loại bỏ kịch bản lặp do Zod đã chặn)**. Sự phối hợp này chính là chìa khóa giúp bộ kiểm thử Cart đạt mức tuyệt đối **100% Statement Coverage, 100% Branch Coverage, 100% Pass Rate** với chỉ 21 test cases tối ưu và tinh gọn.
